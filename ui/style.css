@@ -1,4 +1,4 @@
-/* Bobine Assistant d'installation — Design System Styles */
+/* Bobine Deploy : styles de l'interface */
 
 :root {
   /* Thème "Clair — Albâtre & Ardoise" : surfaces blanc cassé (albâtre),
@@ -71,8 +71,6 @@ body {
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
-  /* Barres système d'Android (état, navigation) : contenu jamais dessous. */
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .app-header {
@@ -676,11 +674,6 @@ body {
   cursor: pointer;
 }
 
-/* Android : ni agent SSH ni dossier ~/.ssh. */
-.is-android .local-keys-row {
-  display: none;
-}
-
 .key-filename-hint {
   font-size: 0.8rem;
   color: var(--text-dim);
@@ -909,38 +902,6 @@ body {
   margin-top: 14px;
 }
 
-/* Bannière "nouvelle version de l'assistant disponible". Style
-   général de l'installateur (gris neutre --accent-primary, pas de bleu
-   d'alerte) — cohérent avec le reste de l'IHM plutôt qu'une couleur
-   "notification système" hors charte. */
-.update-banner {
-  background-color: var(--bg-surface-elevated);
-  border-bottom: 1px solid var(--border-color);
-  padding: 10px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.update-banner-text {
-  color: var(--text-main);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.update-banner-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.update-banner-actions .btn {
-  padding: 6px 14px;
-  font-size: 0.8rem;
-}
-
 /* Numéro de version, coin bas-droit — discret, toujours visible, même style neutre que le reste
    de l'IHM. */
 .app-version-badge {
@@ -1006,7 +967,7 @@ body {
   color: var(--text-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
-/* Téléphone (Android, ou fenêtre étroite) : une colonne, étapes défilantes, boutons pleine largeur. */
+/* Fenêtre étroite : une colonne, étapes défilantes, boutons pleine largeur. */
 @media (max-width: 640px) {
   .app-header { height: 56px; padding: 0 16px; }
   .brand-logo { height: 30px; }
@@ -1030,7 +991,6 @@ body {
   .form-grid, .spec-cards-grid { grid-template-columns: 1fr; }
   .step-actions { flex-direction: column-reverse; }
   .step-actions .btn { width: 100%; }
-  .update-banner { flex-direction: column; align-items: stretch; }
   .app-version-badge { display: none; }
 }
 

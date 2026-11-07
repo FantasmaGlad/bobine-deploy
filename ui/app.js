@@ -1,5 +1,5 @@
 /**
- * Bobine — Assistant d'installation
+ * Bobine Deploy
  * Logique IHM & IPC Tauri 2
  */
 
@@ -70,9 +70,6 @@ async function invokeTauri(cmd, args = {}) {
   if (cmd === 'ssh_host_key') {
     return { host: args.host, port: args.port, fingerprint: 'SHA256:exemple', key_type: 'ssh-ed25519', status: 'known', known_hosts: '' };
   }
-  if (cmd === 'check_assistant_update') {
-    return { available: false, current: '0.0.0-dev', version: null, notes: null };
-  }
   if (cmd === 'pick_ssh_key_file') {
     await new Promise(r => setTimeout(r, 400));
     return '/home/exemple/.ssh/cle_exemple_ed25519';
@@ -117,21 +114,20 @@ function renderPreviewModeBanner() {
 // Mémorisation locale (identifiant SSH...) : un geste en moins à chaque
 // déploiement. Jamais de mot de passe ni de clé. Silencieux si indisponible.
 function remember(key, value) {
-  try { localStorage.setItem(`bobine-assistant:${key}`, value); } catch { /* mode privé strict */ }
+  try { localStorage.setItem(`bobine-deploy:${key}`, value); } catch { /* mode privé strict */ }
 }
 function recall(key) {
-  try { return localStorage.getItem(`bobine-assistant:${key}`); } catch { return null; }
+  try { return localStorage.getItem(`bobine-deploy:${key}`); } catch { return null; }
 }
 
 function init() {
   renderPreviewModeBanner();
-  if (/Android/i.test(navigator.userAgent)) document.documentElement.classList.add('is-android');
   const savedUser = recall('sshUsername');
   const userField = document.getElementById('ssh-username');
   if (savedUser && userField && !userField.value) userField.value = savedUser;
   initWizard();
   listenTauriEvents();
-  checkAssistantUpdate();
+  showAppVersion();
 }
 
 if (document.readyState === 'loading') {
@@ -386,11 +382,6 @@ function kioskUrl() {
   return `${adminUrl()}/kiosk`;
 }
 
-// Mise à jour de l'assistant lui-même (commandes Rust `check_assistant_update` et `install_assistant_update`, greffon
-// de mise à jour de Tauri) : version lue dans `latest.json` de la release du canal de ce build, paquet vérifié par sa
-// signature avant installation, puis relance. Une version écartée par « Plus tard » n'est plus proposée.
-const ASSISTANT_UPDATE_DISMISSED_KEY = 'bobine-assistant-update-dismissed';
-
 function renderAppVersionBadge(version, commit) {
   const badge = document.getElementById('app-version-badge');
   if (!badge || !version) return;
@@ -399,67 +390,13 @@ function renderAppVersionBadge(version, commit) {
   badge.hidden = false;
 }
 
-async function checkAssistantUpdate() {
+async function showAppVersion() {
   try {
     const info = await invokeTauri('get_app_info', {});
     renderAppVersionBadge(info?.version, info?.commit);
   } catch {
-    // Version illisible : le badge reste masqué, la recherche de mise à jour continue.
+    // Version illisible : le badge reste masqué.
   }
-
-  let update;
-  try {
-    update = await invokeTauri('check_assistant_update', {});
-  } catch {
-    return; // Hors ligne ou release du canal indisponible : silencieux, comme le reste de l'assistant.
-  }
-  if (!update?.available || !update.version) return;
-
-  let dismissed = null;
-  try {
-    dismissed = localStorage.getItem(ASSISTANT_UPDATE_DISMISSED_KEY);
-  } catch {
-    // localStorage indisponible (mode privé strict) : pas de mémorisation.
-  }
-  if (dismissed === update.version) return;
-
-  const banner = document.getElementById('assistant-update-banner');
-  const text = document.getElementById('assistant-update-text');
-  const install = document.getElementById('btn-assistant-update-install');
-  const dismiss = document.getElementById('btn-assistant-update-dismiss');
-  if (!banner || !text || !install || !dismiss) return;
-  text.textContent = `Bobine Assistant ${update.version} est disponible (version installée : ${update.current}).`;
-  banner.style.display = 'flex';
-
-  install.onclick = async () => {
-    install.disabled = true;
-    dismiss.disabled = true;
-    text.textContent = `Téléchargement de Bobine Assistant ${update.version}…`;
-    const listen = window.__TAURI__?.event?.listen;
-    let unlisten = null;
-    try {
-      if (listen) {
-        unlisten = await listen('assistant-update-progress', (event) => {
-          const { downloaded, total } = event.payload || {};
-          if (total) text.textContent = `Téléchargement : ${Math.floor((100 * downloaded) / total)} %`;
-        });
-      }
-      await invokeTauri('install_assistant_update', {}); // relance l'assistant en cas de succès
-    } catch (error) {
-      unlisten?.();
-      text.textContent = `La mise à jour a échoué : ${error}. Bobine n'est pas touché ; réessayez plus tard.`;
-      install.disabled = false;
-      dismiss.disabled = false;
-    }
-  };
-  dismiss.onclick = () => {
-    banner.style.display = 'none';
-    try {
-      localStorage.setItem(ASSISTANT_UPDATE_DISMISSED_KEY, update.version);
-    } catch {
-      // idem : pas bloquant si indisponible.
-    }
-  };
 }
 
 // Clé d'hôte SSH vérifiée avant tout envoi de mot de passe (host_key.rs) : une machine inconnue n'est enregistrée

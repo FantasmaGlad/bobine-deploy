@@ -1,12 +1,12 @@
+use serde::{Deserialize, Serialize};
+use ssh2::Session;
 use std::io::Read;
 use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::time::Duration;
-use serde::{Deserialize, Serialize};
-use ssh2::Session;
 
 use crate::error::AssistantError;
 
-use bobine_installer_core::privilege::{decide, elevation_for, PrivilegeDecision, SudoProbe};
+use bobine_deploy_core::privilege::{decide, elevation_for, PrivilegeDecision, SudoProbe};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SshCredentials {
@@ -71,7 +71,8 @@ pub(crate) fn open_ssh_session(
     let sess = connect(host, port).map_err(AssistantError::Unreachable)?;
     // Avant tout secret : la clé d'hôte doit déjà être connue (voir host_key.rs).
     super::host_key::require_known(&sess, host.trim(), port)?;
-    super::ssh_auth::authenticate_session(&sess, username, password, key_path, local_keys).map_err(AssistantError::Refused)?;
+    super::ssh_auth::authenticate_session(&sess, username, password, key_path, local_keys)
+        .map_err(AssistantError::Refused)?;
     Ok(sess)
 }
 
@@ -164,7 +165,7 @@ pub async fn test_ssh_connection(creds: SshCredentials) -> Result<SystemInspecti
 }
 
 /// Connexion SSH puis audit de la cible (système, architecture, élévation, matériel) : partagé par l'interface et
-/// par `bobine-assistant inspect`.
+/// par `bobine-deploy inspect`.
 pub fn inspect(mut creds: SshCredentials) -> Result<SystemInspection, AssistantError> {
     {
         let sess = open_ssh_session(
@@ -178,8 +179,7 @@ pub fn inspect(mut creds: SshCredentials) -> Result<SystemInspection, AssistantE
 
         // 1. Détection OS
         let os_release = run_remote_exec(&sess, "cat /etc/os-release 2>/dev/null || true")?;
-        let is_debian = os_release.to_lowercase().contains("id=debian")
-            || os_release.to_lowercase().contains("debian");
+        let is_debian = os_release.to_lowercase().contains("id=debian") || os_release.to_lowercase().contains("debian");
         let is_debian_13 = os_release.contains("VERSION_ID=\"13\"") || os_release.contains("trixie");
         let os_pretty = os_release
             .lines()
@@ -211,8 +211,11 @@ pub fn inspect(mut creds: SshCredentials) -> Result<SystemInspection, AssistantE
         let needs_root_password = decision == PrivilegeDecision::BootstrapSuAsUser;
 
         // 4. Métriques matérielles
-        let cpu_info = run_remote_exec(&sess, "grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs || uname -p")
-            .unwrap_or_else(|_| "Processeur x86-64".to_string());
+        let cpu_info = run_remote_exec(
+            &sess,
+            "grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs || uname -p",
+        )
+        .unwrap_or_else(|_| "Processeur x86-64".to_string());
 
         let mem_total_kb = run_remote_exec(&sess, "grep MemTotal /proc/meminfo | awk '{print $2}'")
             .unwrap_or_default()
@@ -226,8 +229,11 @@ pub fn inspect(mut creds: SshCredentials) -> Result<SystemInspection, AssistantE
             .unwrap_or(20000000);
         let disk_free_gb = disk_free_kb / (1024 * 1024);
 
-        let gpu_info = run_remote_exec(&sess, "lspci 2>/dev/null | grep -E 'VGA|3D|Display' | cut -d: -f3 | xargs || true")
-            .unwrap_or_else(|_| "iGPU / Accélération graphique standard".to_string());
+        let gpu_info = run_remote_exec(
+            &sess,
+            "lspci 2>/dev/null | grep -E 'VGA|3D|Display' | cut -d: -f3 | xargs || true",
+        )
+        .unwrap_or_else(|_| "iGPU / Accélération graphique standard".to_string());
 
         Ok(SystemInspection {
             host: std::mem::take(&mut creds.host),
@@ -243,10 +249,18 @@ pub fn inspect(mut creds: SshCredentials) -> Result<SystemInspection, AssistantE
                 PrivilegeDecision::BootstrapSuAsUser => "su_as_user".to_string(),
             },
             needs_root_password,
-            cpu_model: if cpu_info.is_empty() { "AMD/Intel x86-64".to_string() } else { cpu_info },
+            cpu_model: if cpu_info.is_empty() {
+                "AMD/Intel x86-64".to_string()
+            } else {
+                cpu_info
+            },
             memory_total_mb,
             disk_free_gb,
-            gpu_info: if gpu_info.is_empty() { "Graphismes intégrés".to_string() } else { gpu_info },
+            gpu_info: if gpu_info.is_empty() {
+                "Graphismes intégrés".to_string()
+            } else {
+                gpu_info
+            },
         })
     }
 }

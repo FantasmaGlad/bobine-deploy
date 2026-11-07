@@ -12,9 +12,9 @@ use tokio::net::TcpStream;
 use tokio::sync::Semaphore;
 use tokio::time::timeout;
 
-use bobine_installer_core::discovery::{
-    host_range, is_scannable_ipv4, is_tunnel_interface, is_virtual_interface, os_hint_from_banner,
-    os_hint_from_ports, parse_arp_a, parse_network_spec, parse_proc_net_arp, prefix_from_netmask,
+use bobine_deploy_core::discovery::{
+    host_range, is_scannable_ipv4, is_tunnel_interface, is_virtual_interface, os_hint_from_banner, os_hint_from_ports,
+    parse_arp_a, parse_network_spec, parse_proc_net_arp, prefix_from_netmask,
 };
 
 /// Un appareil détecté sur le réseau — pas nécessairement une cible Bobine.
@@ -105,7 +105,9 @@ fn plan_from_interfaces() -> ScanPlan {
 
     if let Ok(interfaces) = if_addrs::get_if_addrs() {
         for iface in interfaces {
-            let if_addrs::IfAddr::V4(v4) = &iface.addr else { continue };
+            let if_addrs::IfAddr::V4(v4) = &iface.addr else {
+                continue;
+            };
             if iface.is_loopback() || !is_scannable_ipv4(v4.ip) {
                 continue;
             }
@@ -152,7 +154,9 @@ fn default_route_ip() -> Option<Ipv4Addr> {
 }
 
 async fn connect_probe(sockets: &Semaphore, ip: Ipv4Addr, port: u16) -> ProbeOutcome {
-    let Ok(_permit) = sockets.acquire().await else { return ProbeOutcome::Silent };
+    let Ok(_permit) = sockets.acquire().await else {
+        return ProbeOutcome::Silent;
+    };
     let addr = SocketAddr::new(IpAddr::V4(ip), port);
     match timeout(CONNECT_TIMEOUT, TcpStream::connect(addr)).await {
         Ok(Ok(stream)) => ProbeOutcome::Open(stream),
@@ -179,7 +183,10 @@ async fn read_ssh_banner(stream: TcpStream) -> String {
 /// suffisante pour ne pas prendre n'importe quel serveur de dev pour une borne.
 async fn confirm_bobine(mut stream: TcpStream) -> bool {
     let request = b"GET /api/health HTTP/1.0\r\nHost: bobine\r\nConnection: close\r\n\r\n";
-    if timeout(Duration::from_millis(600), stream.write_all(request)).await.is_err() {
+    if timeout(Duration::from_millis(600), stream.write_all(request))
+        .await
+        .is_err()
+    {
         return false;
     }
     let mut buf = vec![0u8; 1024];
@@ -211,7 +218,9 @@ async fn probe_host(sockets: Arc<Semaphore>, ip: Ipv4Addr) -> Option<DiscoveredD
     let mut handles = Vec::with_capacity(COMMON_PORTS.len() + 1);
     for port in COMMON_PORTS.iter().copied().chain(std::iter::once(LIVENESS_PROBE_PORT)) {
         let sockets = sockets.clone();
-        handles.push(tokio::spawn(async move { (port, connect_probe(&sockets, ip, port).await) }));
+        handles.push(tokio::spawn(
+            async move { (port, connect_probe(&sockets, ip, port).await) },
+        ));
     }
 
     let mut open_ports: Vec<u16> = Vec::new();
@@ -247,7 +256,15 @@ async fn probe_host(sockets: Arc<Semaphore>, ip: Ipv4Addr) -> Option<DiscoveredD
         .as_deref()
         .and_then(os_hint_from_banner)
         .or_else(|| os_hint_from_ports(&open_ports));
-    Some(build_device(ip, None, ssh_open, bobine_open, open_ports, os_hint, "ports"))
+    Some(build_device(
+        ip,
+        None,
+        ssh_open,
+        bobine_open,
+        open_ports,
+        os_hint,
+        "ports",
+    ))
 }
 
 fn build_device(
@@ -318,9 +335,7 @@ fn read_arp_table() -> HashMap<Ipv4Addr, String> {
         command.creation_flags(0x0800_0000);
     }
     match command.output() {
-        Ok(out) if out.status.success() => {
-            parse_arp_a(&String::from_utf8_lossy(&out.stdout)).into_iter().collect()
-        }
+        Ok(out) if out.status.success() => parse_arp_a(&String::from_utf8_lossy(&out.stdout)).into_iter().collect(),
         _ => HashMap::new(),
     }
 }
@@ -347,7 +362,7 @@ pub async fn scan_network(app: AppHandle, custom_subnet: Option<String>) -> Resu
     scan(&app, custom_subnet).await
 }
 
-/// Balayage des réseaux locaux (ou du réseau saisi) : partagé par l'interface et par `bobine-assistant scan`.
+/// Balayage des réseaux locaux (ou du réseau saisi) : partagé par l'interface et par `bobine-deploy scan`.
 pub async fn scan(events: &dyn Events, custom_subnet: Option<String>) -> Result<Vec<DiscoveredDevice>, String> {
     let mut plan = plan_from_interfaces();
 
@@ -355,7 +370,11 @@ pub async fn scan(events: &dyn Events, custom_subnet: Option<String>) -> Result<
         let (ip, prefix) = parse_network_spec(spec).ok_or_else(|| {
             "Réseau invalide : saisissez une adresse (192.168.2.10) ou un réseau (192.168.2.0/24).".to_string()
         })?;
-        plan.networks = vec![(ip, prefix, format!("{}/{} (saisi)", network_of(ip, prefix), prefix.max(22)))];
+        plan.networks = vec![(
+            ip,
+            prefix,
+            format!("{}/{} (saisi)", network_of(ip, prefix), prefix.max(22)),
+        )];
     }
     if plan.networks.is_empty() {
         return Err(
@@ -404,7 +423,16 @@ pub async fn scan(events: &dyn Events, custom_subnet: Option<String>) -> Result<
         // Au plus ~8 mises à jour par seconde : fluide sans noyer l'IHM.
         if last_emit.elapsed() >= Duration::from_millis(120) || done == total {
             last_emit = Instant::now();
-            crate::events::send(events, "scan_progress", &ScanProgress { done, total, found: results.len(), networks: network_labels.clone() });
+            crate::events::send(
+                events,
+                "scan_progress",
+                &ScanProgress {
+                    done,
+                    total,
+                    found: results.len(),
+                    networks: network_labels.clone(),
+                },
+            );
         }
     }
 
@@ -439,8 +467,13 @@ pub async fn scan(events: &dyn Events, custom_subnet: Option<String>) -> Result<
             }
             None => {
                 let mut device = build_device(
-                    mdns_ip, Some("bobine.local".to_string()), false, false, Vec::new(),
-                    Some("Bobine (bobine.local)".to_string()), "mdns",
+                    mdns_ip,
+                    Some("bobine.local".to_string()),
+                    false,
+                    false,
+                    Vec::new(),
+                    Some("Bobine (bobine.local)".to_string()),
+                    "mdns",
                 );
                 device.is_wyse_or_bobine = true;
                 crate::events::send(events, "scan_device", &device);
@@ -481,6 +514,15 @@ pub async fn scan(events: &dyn Events, custom_subnet: Option<String>) -> Result<
             })
     });
 
-    crate::events::send(events, "scan_progress", &ScanProgress { done: total, total, found: results.len(), networks: network_labels });
+    crate::events::send(
+        events,
+        "scan_progress",
+        &ScanProgress {
+            done: total,
+            total,
+            found: results.len(),
+            networks: network_labels,
+        },
+    );
     Ok(results)
 }

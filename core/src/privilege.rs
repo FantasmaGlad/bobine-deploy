@@ -55,25 +55,36 @@ mod tests {
 
     #[test]
     fn sudoer_with_sudo_uses_sudo() {
-        let d = decide(&SudoProbe { sudo_installed: true, user_is_sudoer: true });
+        let d = decide(&SudoProbe {
+            sudo_installed: true,
+            user_is_sudoer: true,
+        });
         assert_eq!(d, PrivilegeDecision::UseSudo);
         assert_eq!(elevation_for(d, "alice"), Elevation::Sudo);
     }
 
     #[test]
     fn missing_sudo_bootstraps_su() {
-        let d = decide(&SudoProbe { sudo_installed: false, user_is_sudoer: false });
+        let d = decide(&SudoProbe {
+            sudo_installed: false,
+            user_is_sudoer: false,
+        });
         assert_eq!(d, PrivilegeDecision::BootstrapSuAsUser);
         assert_eq!(
             elevation_for(d, "alice"),
-            Elevation::SuRoot { as_user: "alice".to_string() }
+            Elevation::SuRoot {
+                as_user: "alice".to_string()
+            }
         );
     }
 
     #[test]
     fn sudo_present_but_not_sudoer_bootstraps_su() {
         // Cas « mot de passe root défini » : sudo installé mais user absent des sudoers.
-        let d = decide(&SudoProbe { sudo_installed: true, user_is_sudoer: false });
+        let d = decide(&SudoProbe {
+            sudo_installed: true,
+            user_is_sudoer: false,
+        });
         assert_eq!(d, PrivilegeDecision::BootstrapSuAsUser);
     }
 }

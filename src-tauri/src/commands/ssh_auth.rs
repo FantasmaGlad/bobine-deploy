@@ -1,16 +1,11 @@
-use std::path::PathBuf;
 use ssh2::{Prompt, Session};
+use std::path::PathBuf;
 use tauri_plugin_dialog::DialogExt;
 
 struct SimplePasswordPrompt<'a>(&'a str);
 
 impl<'a> ssh2::KeyboardInteractivePrompt for SimplePasswordPrompt<'a> {
-    fn prompt<'b>(
-        &mut self,
-        _username: &str,
-        _instructions: &str,
-        prompts: &[Prompt<'b>],
-    ) -> Vec<String> {
+    fn prompt<'b>(&mut self, _username: &str, _instructions: &str, prompts: &[Prompt<'b>]) -> Vec<String> {
         prompts.iter().map(|_| self.0.to_string()).collect()
     }
 }
@@ -86,14 +81,13 @@ pub fn authenticate_session(
             return Ok(());
         }
     }
-    let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).ok().filter(|_| local_keys);
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .ok()
+        .filter(|_| local_keys);
     if let Some(home) = home {
         let ssh_dir = PathBuf::from(home).join(".ssh");
-        let key_candidates = [
-            "id_ed25519",
-            "id_rsa",
-            "id_ecdsa",
-        ];
+        let key_candidates = ["id_ed25519", "id_rsa", "id_ecdsa"];
 
         for key_name in &key_candidates {
             let priv_key = ssh_dir.join(key_name);
@@ -152,8 +146,7 @@ pub async fn pick_ssh_key_file(app: tauri::AppHandle) -> Result<Option<String>, 
         .pick_file(move |file_path| {
             let _ = tx.send(file_path.map(|p| p.to_string()));
         });
-    rx.await
-        .map_err(|e| format!("Erreur du sélecteur de fichier : {e}"))
+    rx.await.map_err(|e| format!("Erreur du sélecteur de fichier : {e}"))
 }
 
 #[cfg(test)]
@@ -184,7 +177,11 @@ mod tests {
             // Même si on donne un mot de passe qui échoue (ou rejeté par le serveur),
             // authenticate_session doit automatiquement se replier sur l'agent ou les clés locales
             let res = authenticate_session(&sess, "alice", Some("un_faux_mot_de_passe"), None, false);
-            assert!(res.is_ok(), "L'authentification par repli sur clé devrait réussir : {:?}", res);
+            assert!(
+                res.is_ok(),
+                "L'authentification par repli sur clé devrait réussir : {:?}",
+                res
+            );
             assert!(sess.authenticated());
         }
     }

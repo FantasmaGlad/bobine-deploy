@@ -80,9 +80,9 @@ pub enum Elevation {
 /// caractères sûr courant : options, chemins, `=`, `:`, `,`).
 fn is_shell_safe(token: &str) -> bool {
     !token.is_empty()
-        && token
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | '/' | '=' | ':' | ',' | '+' | '@' | '%'))
+        && token.chars().all(|c| {
+            c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | '/' | '=' | ':' | ',' | '+' | '@' | '%')
+        })
 }
 
 /// Protège une chaîne en guillemets simples POSIX (`'…'`), en gérant le `'`
@@ -186,7 +186,10 @@ mod tests {
 
     #[test]
     fn channel_flag_is_emitted_when_set() {
-        let opts = InstallOptions { channel: "beta".to_string(), ..Default::default() };
+        let opts = InstallOptions {
+            channel: "beta".to_string(),
+            ..Default::default()
+        };
         assert_eq!(opts.to_args(), vec!["-y", "--channel=beta"]);
     }
 
@@ -197,7 +200,10 @@ mod tests {
             &InstallOptions::assistant_default(),
             &Elevation::Sudo,
         );
-        assert_eq!(cmd, "sudo /home/alice/Bobine/install.sh -y --progress=json --channel=stable");
+        assert_eq!(
+            cmd,
+            "sudo /home/alice/Bobine/install.sh -y --progress=json --channel=stable"
+        );
     }
 
     #[test]
@@ -205,7 +211,9 @@ mod tests {
         let cmd = build_remote_command(
             "/home/alice/Bobine/install.sh",
             &InstallOptions::assistant_default(),
-            &Elevation::SuRoot { as_user: "alice".to_string() },
+            &Elevation::SuRoot {
+                as_user: "alice".to_string(),
+            },
         );
         assert_eq!(
             cmd,
@@ -236,8 +244,14 @@ mod tests {
     fn su_root_quoting_survives_space_in_login_home() {
         let cmd = build_remote_command(
             "/opt/bobine/install.sh",
-            &InstallOptions { no_kiosk: true, progress_json: true, ..Default::default() },
-            &Elevation::SuRoot { as_user: "op er".to_string() },
+            &InstallOptions {
+                no_kiosk: true,
+                progress_json: true,
+                ..Default::default()
+            },
+            &Elevation::SuRoot {
+                as_user: "op er".to_string(),
+            },
         );
         // Le login avec espace est protégé DANS la commande interne, elle-même
         // protégée par les guillemets externes de `su -c`.
@@ -255,12 +269,17 @@ mod tests {
             &InstallOptions::assistant_default(),
             &Elevation::Sudo,
         );
-        assert_eq!(sudo, "sudo bash /tmp/bobine-install-1.sh -y --progress=json --channel=stable");
+        assert_eq!(
+            sudo,
+            "sudo bash /tmp/bobine-install-1.sh -y --progress=json --channel=stable"
+        );
         let su = build_remote_command_via(
             "bash",
             "/tmp/bobine-install-1.sh",
             &InstallOptions::assistant_default(),
-            &Elevation::SuRoot { as_user: "alice".to_string() },
+            &Elevation::SuRoot {
+                as_user: "alice".to_string(),
+            },
         );
         assert_eq!(
             su,

@@ -1,28 +1,42 @@
 use std::path::Path;
 
-/// Embarque la version et le commit de build dans le binaire. Lit `VERSION`/`COMMIT` à la racine du dépôt — mêmes fichiers
-/// que ceux lus par le backend Python (`app/utils/version.py`), écrits par
-/// la CI juste avant `cargo build` (VERSION suffixée "-beta" ou "-canary"
-/// selon le canal rolling concerné, cf. ci.yml). Repli sur des valeurs de
-/// développement si absents (compilation locale hors CI).
+use sha2::{Digest, Sha256};
+
+/// Embarque la version et le commit de build (`VERSION`, `COMMIT` à la racine du dépôt, `COMMIT` écrit par la CI), et
+/// refuse de compiler si `vendor/install.sh` n'a pas l'empreinte épinglée dans `bobine-release.toml`.
 fn main() {
     tauri_build::build();
 
-    let repo_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+    let read = |name: &str, default: &str| {
+        std::fs::read_to_string(root.join(name))
+            .ok()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| default.to_string())
+    };
+    println!("cargo:rustc-env=BOBINE_VERSION={}", read("VERSION", "0.0.0-dev"));
+    println!("cargo:rustc-env=BOBINE_COMMIT={}", read("COMMIT", "unknown"));
 
-    let version = std::fs::read_to_string(repo_root.join("VERSION"))
-        .ok()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| "0.0.0-dev".to_string());
-    let commit = std::fs::read_to_string(repo_root.join("COMMIT"))
-        .ok()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| "unknown".to_string());
+    let pin = std::fs::read_to_string(root.join("bobine-release.toml")).expect("bobine-release.toml illisible");
+    let expected = pin
+        .lines()
+        .find_map(|line| line.strip_prefix("install_sh_sha256 = \""))
+        .and_then(|rest| rest.strip_suffix('"'))
+        .expect("install_sh_sha256 absent de bobine-release.toml");
+    let script = std::fs::read(root.join("vendor/install.sh")).expect("vendor/install.sh illisible");
+    let actual = format!("{:x}", Sha256::digest(&script));
+    assert_eq!(
+        actual, expected,
+        "vendor/install.sh ne correspond pas à bobine-release.toml : scripts/sync-install-sh.py"
+    );
 
-    println!("cargo:rustc-env=BOBINE_VERSION={version}");
-    println!("cargo:rustc-env=BOBINE_COMMIT={commit}");
-    println!("cargo:rerun-if-changed=../../VERSION");
-    println!("cargo:rerun-if-changed=../../COMMIT");
+    for path in [
+        "../VERSION",
+        "../COMMIT",
+        "../bobine-release.toml",
+        "../vendor/install.sh",
+    ] {
+        println!("cargo:rerun-if-changed={path}");
+    }
 }
