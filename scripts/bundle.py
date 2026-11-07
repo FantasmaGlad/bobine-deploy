@@ -18,6 +18,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 TAURI_CLI = "@tauri-apps/cli@2.12.4"
@@ -52,6 +53,15 @@ def target_names(system: str, arch: str, version: str) -> dict[str, str]:
         "windows": {".exe": f"Bobine-Deploy-Setup-{version}{suffix}.exe"},
         "macos": {".dmg": f"Bobine-Deploy-{version}{suffix}.dmg"},
     }[system]
+
+
+def detach_stale_images() -> None:
+    """Détache les images disque laissées montées par un empaquetage .dmg interrompu."""
+    info = subprocess.run(["hdiutil", "info"], capture_output=True, text=True).stdout
+    for line in info.splitlines():
+        fields = line.split("\t")
+        if fields and fields[0].startswith("/dev/disk") and "/Volumes/" in line and "Bobine" in line:
+            subprocess.run(["hdiutil", "detach", "-force", fields[0].strip()], check=False)
 
 
 def collect(bundle_dir: Path, names: dict[str, str], out: Path) -> list[Path]:
@@ -99,8 +109,18 @@ def main(argv: list[str] | None = None) -> int:
         override = Path(tmp) / "version.json"
         override.write_text(json.dumps({"version": version}), encoding="utf-8")
         command = [npx, "--yes", TAURI_CLI, "build", "--bundles", ",".join(bundles_for(system)), "--config", str(override)]
-        print("+", " ".join(command), flush=True)
-        subprocess.run(command, cwd=ROOT / "src-tauri", check=True)
+        # macOS : hdiutil échoue parfois à éjecter l'image intermédiaire du .dmg (« Resource busy », analyse du système
+        # sur l'image tout juste écrite). Nouvel essai après détachement des images restées montées ; la compilation
+        # est déjà faite, seul l'empaquetage est rejoué.
+        attempts = 3 if system == "macos" else 1
+        for attempt in range(1, attempts + 1):
+            print("+", " ".join(command), flush=True)
+            if subprocess.run(command, cwd=ROOT / "src-tauri").returncode == 0:
+                break
+            if attempt == attempts:
+                raise SystemExit(f"empaquetage en échec après {attempts} essai(s)")
+            detach_stale_images()
+            time.sleep(10 * attempt)
 
     written = collect(bundle_dir, target_names(system, arch, version), args.out)
     if args.gpg_sign:

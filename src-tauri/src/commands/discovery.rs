@@ -14,7 +14,7 @@ use tokio::time::timeout;
 
 use bobine_deploy_core::discovery::{
     host_range, is_scannable_ipv4, is_tunnel_interface, is_virtual_interface, os_hint_from_banner, os_hint_from_ports,
-    parse_arp_a, parse_network_spec, parse_proc_net_arp, prefix_from_netmask,
+    parse_arp_a, parse_network_spec, prefix_from_netmask,
 };
 
 /// Un appareil détecté sur le réseau — pas nécessairement une cible Bobine.
@@ -321,7 +321,9 @@ fn read_arp_table() -> HashMap<Ipv4Addr, String> {
     #[cfg(target_os = "linux")]
     {
         if let Ok(content) = std::fs::read_to_string("/proc/net/arp") {
-            return parse_proc_net_arp(&content).into_iter().collect();
+            return bobine_deploy_core::discovery::parse_proc_net_arp(&content)
+                .into_iter()
+                .collect();
         }
     }
     // Chemin absolu : un `arp` placé plus tôt dans le PATH (ou dans le dossier courant sous Windows) ne doit pas
