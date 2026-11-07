@@ -187,7 +187,7 @@ jobs:
           if-no-files-found: error
 
   ci-ok:
-    name: CI OK
+    name: ci-ok
     if: always()
     needs: [checks, packages]
     runs-on: ubuntu-24.04
