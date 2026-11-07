@@ -1,61 +1,14 @@
 # Bobine Deploy
 
-Install and maintain [Bobine](https://github.com/FantasmaGlad/Bobine) on the machines of your network, from a
-graphical interface or from the command line. Bobine Deploy finds the mini PC on the local network, connects to it over
-SSH, checks the hardware and the privilege policy, then runs the Bobine installer with live progress.
+Install [Bobine](https://github.com/FantasmaGlad/Bobine) on a mini PC of your network over SSH, from a window or the command line (`bobine-deploy --help`). French: [README.fr.md](README.fr.md).
 
-French version: [README.fr.md](README.fr.md). Website: <https://bobine.fit>.
+| Platform | Download | Requirements |
+| :--- | :--- | :--- |
+| <img src="https://raw.githubusercontent.com/FantasmaGlad/Bobine/main/Assets/Icons/os/windows.svg" width="20" height="20" valign="middle" alt="Windows"> **Windows** 10 & 11 | [x64](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.0.1/Bobine-Deploy-Setup-0.0.1-x64.exe) · [ARM64](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.0.1/Bobine-Deploy-Setup-0.0.1-arm64.exe) | per-user installer, no administrator rights |
+| <img src="https://raw.githubusercontent.com/FantasmaGlad/Bobine/main/Assets/Icons/os/apple.svg" width="20" height="20" valign="middle" alt="macOS"> **macOS** | [Apple Silicon](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.0.1/Bobine-Deploy-0.0.1-arm64.dmg) · [Intel](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.0.1/Bobine-Deploy-0.0.1-x64.dmg) | `.dmg`, or `brew install --cask fantasmaglad/bobine/bobine-deploy` |
+| <img src="https://raw.githubusercontent.com/FantasmaGlad/Bobine/main/Assets/Icons/distros/debian.svg" width="20" height="20" valign="middle" alt="Debian"> **Debian, Ubuntu** | [amd64](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.0.1/bobine-deploy_0.0.1_amd64.deb) · [arm64](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.0.1/bobine-deploy_0.0.1_arm64.deb) | WebKitGTK 4.1 |
+| <img src="https://raw.githubusercontent.com/FantasmaGlad/Bobine/main/Assets/Icons/distros/fedora.svg" width="20" height="20" valign="middle" alt="Fedora"> **Fedora, RHEL** | [x86_64](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.0.1/bobine-deploy-0.0.1.x86_64.rpm) · [aarch64](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.0.1/bobine-deploy-0.0.1.aarch64.rpm) | WebKitGTK 4.1 |
 
-## Status
+Checksums: [SHA256SUMS](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.0.1/SHA256SUMS), signed with the Bobine release key ([SHA256SUMS.asc](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.0.1/SHA256SUMS.asc), see [SECURITY.md](SECURITY.md)). License: [AGPL-3.0](LICENSE). Contributing: [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Version 0.0.1 is the installation assistant formerly shipped inside the Bobine repository, moved here unchanged in
-behavior. It runs on Linux, Windows and macOS, x86_64 and ARM64. A native rewrite (no WebView, full parity between the
-interface, the command line and a JSON-RPC automation interface) is planned for the 0.x series.
-
-## Download
-
-Packages are attached to each [release](https://github.com/FantasmaGlad/bobine-deploy/releases): `.deb` and `.rpm`
-for Linux, an NSIS installer for Windows, a `.dmg` for macOS. Check them before use:
-
-```bash
-curl -fsSL https://packages.bobine.fit/bobine.gpg | gpg --import
-gpg --verify SHA256SUMS.asc SHA256SUMS
-sha256sum --check --ignore-missing SHA256SUMS
-```
-
-## Command line
-
-The same executable runs without a window when given a subcommand:
-
-```bash
-bobine-deploy scan [--subnet 192.168.2.0/24]
-bobine-deploy host-key --host bobine.local
-bobine-deploy inspect --host bobine.local --user admin [--key ~/.ssh/id_ed25519 | --local-keys]
-bobine-deploy install --host bobine.local --user admin --channel stable --yes
-bobine-deploy version
-```
-
-`--json` prints JSON on stdout (one event per line during `install`). Passwords are never passed as arguments: use
-`BOBINE_SSH_PASSWORD` and `BOBINE_ROOT_PASSWORD`, or `--password-stdin` and `--root-password-stdin`. The SSH host key is
-checked against `~/.ssh/known_hosts` before any password is sent. Exit codes: 0 success, 1 failure, 2 usage,
-3 unreachable target, 4 authentication refused.
-
-## How it relates to Bobine
-
-Bobine Deploy does not reimplement the installation: it uploads and drives `install.sh` from a signed Bobine release
-(pinned in [`bobine-release.toml`](bobine-release.toml), verified by [`scripts/sync-install-sh.py`](scripts/sync-install-sh.py)
-and checked at build time) and reads its `--progress=json` output.
-
-## Build
-
-```bash
-cargo test --workspace
-python3 scripts/bundle.py --out dist
-```
-
-Requires Rust (see `rust-toolchain.toml`), Node.js for the Tauri CLI, and on Linux the WebKitGTK 4.1 development files.
-
-## License and contributions
-
-[GNU AGPL-3.0-or-later](LICENSE). Contributions are welcome under the terms of [CONTRIBUTING.md](CONTRIBUTING.md).
-Security issues: [SECURITY.md](SECURITY.md).
+<sub>Related repositories: [Bobine](https://github.com/FantasmaGlad/Bobine) (application) · [BobineWeb](https://github.com/FantasmaGlad/BobineWeb) (website) · [bobine-packages](https://github.com/FantasmaGlad/bobine-packages) (Linux package repositories) · [homebrew-bobine](https://github.com/FantasmaGlad/homebrew-bobine) (Homebrew tap) · Security policy: [security.bobine.fit](https://security.bobine.fit), [`/.well-known/security.txt`](https://bobine.fit/.well-known/security.txt)</sub>
