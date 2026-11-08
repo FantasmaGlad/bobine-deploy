@@ -11,7 +11,7 @@ publish = false
 name = "bobine_deploy_lib"
 
 [build-dependencies]
-sha2 = "0.10"
+sha2 = "0.11"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
@@ -24,7 +24,7 @@ tokio = { version = "1", features = ["full"] }
 if-addrs = "0.15"
 dns-lookup = "4"
 clap = { version = "4", features = ["derive"] }
-base64 = "0.22"
+base64 = "0.23"
 zeroize = "1"
 
 # libssh2 a besoin d'OpenSSL : celui du système sous Linux, compilé avec l'application sous Windows et macOS,
