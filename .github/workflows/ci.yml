@@ -42,8 +42,8 @@ jobs:
             push:*) printf 'packages=false\ninstaller=false\n' >> "$GITHUB_OUTPUT"; exit 0 ;;
           esac
           changed=$(git diff --name-only "$BASE" HEAD)
-          # Documentation, licence et modèles de tickets ne changent aucun paquet.
-          if grep -qvE '(\.md$|^LICENSE$|^docs/|^\.github/ISSUE_TEMPLATE/)' <<<"$changed"; then
+          # Documentation, licence, modèles de tickets et manifestes winget ne changent aucun paquet.
+          if grep -qvE '(\.md$|^LICENSE$|^docs/|^\.github/ISSUE_TEMPLATE/|^scripts/winget/|^\.github/workflows/winget\.yml$)' <<<"$changed"; then
             echo "packages=true" >> "$GITHUB_OUTPUT"
           else
             echo "packages=false" >> "$GITHUB_OUTPUT"
@@ -82,6 +82,8 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]] && [ "${GITHUB_REF#refs/tags/v}" != "$version" ]; then
             echo "::error::tag ${GITHUB_REF#refs/tags/} != VERSION $version"; exit 1
           fi
+      - name: Script tests
+        run: python3 -m unittest discover -s scripts/winget -p 'test_*.py'
       - name: Format
         run: cargo fmt --all --check
       - name: Clippy
