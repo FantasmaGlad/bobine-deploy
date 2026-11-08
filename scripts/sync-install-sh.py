@@ -17,7 +17,9 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import tomllib
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -30,8 +32,16 @@ BASE = "https://github.com/FantasmaGlad/Bobine/releases/download/{tag}/{name}"
 
 
 def fetch(tag: str, name: str) -> bytes:
-    with urllib.request.urlopen(BASE.format(tag=tag, name=name), timeout=60) as response:
-        return response.read()
+    """GitHub répond parfois 5xx sur les assets de release : trois essais espacés avant d'abandonner."""
+    for attempt in range(1, 4):
+        try:
+            with urllib.request.urlopen(BASE.format(tag=tag, name=name), timeout=60) as response:
+                return response.read()
+        except (urllib.error.URLError, TimeoutError) as error:
+            if attempt == 3 or (isinstance(error, urllib.error.HTTPError) and error.code < 500):
+                raise
+            time.sleep(10 * attempt)
+    raise AssertionError("inatteignable")
 
 
 def verified_install_sh(tag: str) -> bytes:
