@@ -6,8 +6,10 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
 mod cli;
+mod gui;
 mod parity;
 mod rpc;
+mod text;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -17,7 +19,7 @@ fn main() {
     } else if cli::is_invocation(&args) {
         cli::main(args)
     } else {
-        cli::main(vec![args[0].clone(), "--help".to_string()])
+        gui::main()
     };
     std::process::exit(code);
 }

@@ -20,6 +20,8 @@ clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std", "io-util", "sync"] }
 serde_json = "1"
 zeroize = "1"
+iced = { version = "0.14", default-features = false, features = ["tiny-skia", "crisp", "x11", "wayland", "tokio", "image"] }
+rfd = { version = "0.18", default-features = false, features = ["xdg-portal"] }
 
 [target."cfg(windows)".dependencies]
 windows-sys = { version = "0.61", features = ["Win32_System_Console"] }

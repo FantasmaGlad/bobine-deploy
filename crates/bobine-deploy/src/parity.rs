@@ -15,6 +15,11 @@ mod tests {
     }
 
     #[test]
+    fn the_graphical_interface_triggers_exactly_the_catalog() {
+        assert_eq!(crate::gui::COMMANDS, catalog());
+    }
+
+    #[test]
     fn the_automation_interface_serves_every_command() {
         let methods = crate::rpc::methods();
         for name in catalog() {
