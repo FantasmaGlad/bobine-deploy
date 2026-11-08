@@ -1,7 +1,7 @@
 # Espace de travail de Bobine Deploy : bibliothèque pure (core) et application (src-tauri).
 [workspace]
 resolver = "2"
-members = ["core", "src-tauri"]
+members = ["crates/deploy-core", "crates/deploy-proto", "crates/deploy-engine", "src-tauri"]
 
 # Paquets publiés : sans symboles de débogage, optimisés pour la taille.
 [profile.release]

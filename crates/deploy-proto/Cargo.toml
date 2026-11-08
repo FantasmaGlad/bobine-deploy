@@ -1,0 +1,13 @@
+[package]
+name = "bobine-deploy-proto"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+publish = false
+description = "Contrat de Bobine Deploy : commandes, événements et résultats partagés par l'interface, la ligne de commande et l'interface d'automatisation."
+repository = "https://github.com/FantasmaGlad/bobine-deploy"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+zeroize = { version = "1", features = ["derive"] }
