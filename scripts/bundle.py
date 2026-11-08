@@ -120,6 +120,8 @@ def main(argv: list[str] | None = None) -> int:
             if attempt == attempts:
                 raise SystemExit(f"empaquetage en échec après {attempts} essai(s)")
             detach_stale_images()
+            # L'image intermédiaire de l'essai raté (rw.*.dmg) resterait à côté du .dmg final.
+            shutil.rmtree(bundle_dir / "dmg", ignore_errors=True)
             time.sleep(10 * attempt)
 
     written = collect(bundle_dir, target_names(system, arch, version), args.out)
