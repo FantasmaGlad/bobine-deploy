@@ -18,10 +18,10 @@ use state::App;
 #[cfg(test)]
 pub const COMMANDS: &[&str] = &["scan", "host-key", "trust-host-key", "inspect", "install", "version"];
 
-const LOGO: &[u8] = include_bytes!("../../assets/logo.png");
+const LOGO: &[u8] = include_bytes!("../../assets/icons/256x256.png");
 
 pub fn main() -> i32 {
-    let icon = window::icon::from_file_data(LOGO, None).ok();
+    let icon = window_icon();
     let result = iced::application(boot, update, view)
         .title("Bobine Deploy")
         .theme(theme)
@@ -39,6 +39,14 @@ pub fn main() -> i32 {
             1
         }
     }
+}
+
+fn window_icon() -> Option<window::Icon> {
+    let pixels = ::image::load_from_memory_with_format(LOGO, ::image::ImageFormat::Png)
+        .ok()?
+        .to_rgba8();
+    let (width, height) = pixels.dimensions();
+    window::icon::from_rgba(pixels.into_raw(), width, height).ok()
 }
 
 fn boot() -> (App, Task<Message>) {

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Bobine Deploy
+Comment=Installer Bobine sur les machines du réseau
+Exec=bobine-deploy
+Icon=bobine-deploy
+Terminal=false
+Categories=Utility;Network;

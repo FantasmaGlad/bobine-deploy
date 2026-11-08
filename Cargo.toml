@@ -1,11 +1,10 @@
-# Espace de travail de Bobine Deploy : bibliothèque pure (core) et application (src-tauri).
+# Espace de travail de Bobine Deploy : contrat, logique pure, moteur et application.
 [workspace]
 resolver = "2"
 members = ["crates/deploy-core", "crates/deploy-proto", "crates/deploy-engine", "crates/bobine-deploy"]
 
-# Paquets publiés : sans symboles de débogage, optimisés pour la taille.
+# Rendu de l'interface sur le processeur : optimisé pour la vitesse, la taille n'est pas un critère.
 [profile.release]
 strip = true
-lto = true
-codegen-units = 1
-opt-level = "s"
+lto = "thin"
+opt-level = 3

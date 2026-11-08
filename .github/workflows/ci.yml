@@ -58,15 +58,17 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      - name: System dependencies (WebKitGTK)
+      # OpenSSH server for the SSH engine integration tests (a throwaway sshd started by the tests themselves).
+      - name: System dependencies
         run: |
           sudo apt-get $APT_OPTIONS update
-          sudo apt-get $APT_OPTIONS install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+          sudo apt-get $APT_OPTIONS install -y openssh-server
       - name: Version consistency
         run: |
           version=$(cat VERSION)
-          grep -q "^version = \"$version\"" src-tauri/Cargo.toml || { echo "::error::src-tauri/Cargo.toml != VERSION"; exit 1; }
-          grep -q "\"version\": \"$version\"" src-tauri/tauri.conf.json || { echo "::error::tauri.conf.json != VERSION"; exit 1; }
+          for manifest in crates/*/Cargo.toml; do
+            grep -q "^version = \"$version\"" "$manifest" || { echo "::error::$manifest != VERSION $version"; exit 1; }
+          done
           if [[ "$GITHUB_REF" == refs/tags/v* ]] && [ "${GITHUB_REF#refs/tags/v}" != "$version" ]; then
             echo "::error::tag ${GITHUB_REF#refs/tags/} != VERSION $version"; exit 1
           fi
@@ -100,9 +102,6 @@ jobs:
           - { os: macos-latest, label: macOS arm64 }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 22
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
@@ -112,11 +111,16 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: bundle
-      - name: System dependencies (WebKitGTK)
+      - name: Packaging tools (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get $APT_OPTIONS update
-          sudo apt-get $APT_OPTIONS install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf rpm xvfb
+          sudo apt-get $APT_OPTIONS install -y rpm xvfb libxkbcommon-x11-0
+          cargo install --locked cargo-deb@3.8.0 cargo-generate-rpm@0.21.1
+      - name: Packaging tools (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: command -v makensis || [ -x "/c/Program Files (x86)/NSIS/makensis.exe" ] || choco install nsis -y --no-progress
       - name: Build identifier
         shell: bash
         run: git rev-parse --short HEAD > COMMIT
@@ -137,11 +141,6 @@ jobs:
             gpg_sign=(--gpg-sign "$fingerprint")
           elif [ "$RUNNER_OS" = Linux ] && [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             echo "::error::secret RELEASE_GPG_PRIVATE_KEY absent: a release requires signed .rpm packages"; exit 1
-          fi
-          # OpenSSL is configured with native Windows Perl, not the msys Perl of Git Bash.
-          if [ "$RUNNER_OS" = Windows ]; then
-            [ -f /c/Strawberry/perl/bin/perl.exe ] || choco install strawberryperl -y --no-progress
-            export OPENSSL_SRC_PERL='C:\Strawberry\perl\bin\perl.exe'
           fi
           python scripts/bundle.py --out dist "${gpg_sign[@]}"
       - name: Install and start (Linux)

@@ -20,8 +20,48 @@ clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std", "io-util", "sync"] }
 serde_json = "1"
 zeroize = "1"
-iced = { version = "0.14", default-features = false, features = ["tiny-skia", "crisp", "x11", "wayland", "tokio", "image"] }
+iced = { version = "0.14", default-features = false, features = ["tiny-skia", "crisp", "x11", "wayland", "tokio", "image-without-codecs"] }
+# Seul le PNG sert (icônes) : pas d'autres codecs.
+image = { version = "0.25", default-features = false, features = ["png"] }
 rfd = { version = "0.18", default-features = false, features = ["xdg-portal"] }
 
 [target."cfg(windows)".dependencies]
 windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
+
+# Paquets Linux : `cargo deb` et `cargo generate-rpm` (scripts/bundle.py). Les bibliothèques d'affichage sont chargées
+# à l'exécution : recommandées et non exigées, pour qu'un serveur sans écran installe la ligne de commande seule.
+[package.metadata.deb]
+name = "bobine-deploy"
+maintainer = "FantasmaGlad <security@bobine.fit>"
+copyright = "FantasmaGlad"
+license-file = ["../../LICENSE", "0"]
+extended-description = "Trouve les machines du réseau local, s'y connecte en SSH, vérifie le matériel et installe Bobine. Interface graphique, ligne de commande et JSON-RPC sur stdio."
+section = "utils"
+priority = "optional"
+depends = "$auto"
+recommends = "libxkbcommon0, libxkbcommon-x11-0, libwayland-client0, libx11-6, libxcursor1, libxi6, libxrandr2"
+conflicts = "bobine-assistant"
+replaces = "bobine-assistant"
+assets = [
+    ["target/release/bobine-deploy", "usr/bin/", "755"],
+    ["../../packaging/linux/bobine-deploy.desktop", "usr/share/applications/", "644"],
+    ["assets/icons/128x128.png", "usr/share/icons/hicolor/128x128/apps/bobine-deploy.png", "644"],
+    ["assets/icons/256x256.png", "usr/share/icons/hicolor/256x256/apps/bobine-deploy.png", "644"],
+]
+
+[package.metadata.generate-rpm]
+name = "bobine-deploy"
+summary = "Installer Bobine sur les machines du réseau"
+license = "AGPL-3.0-or-later"
+assets = [
+    { source = "target/release/bobine-deploy", dest = "/usr/bin/bobine-deploy", mode = "755" },
+    { source = "../../packaging/linux/bobine-deploy.desktop", dest = "/usr/share/applications/bobine-deploy.desktop", mode = "644" },
+    { source = "assets/icons/128x128.png", dest = "/usr/share/icons/hicolor/128x128/apps/bobine-deploy.png", mode = "644" },
+    { source = "assets/icons/256x256.png", dest = "/usr/share/icons/hicolor/256x256/apps/bobine-deploy.png", mode = "644" },
+]
+
+[package.metadata.generate-rpm.obsoletes]
+bobine-assistant = "*"
+
+[package.metadata.generate-rpm.conflicts]
+bobine-assistant = "*"
