@@ -150,6 +150,7 @@ jobs:
           test -x /usr/bin/bobine-deploy
           test -f /usr/share/icons/hicolor/128x128/apps/bobine-deploy.png
           bobine-deploy --json version | grep -q '"version"'
+          bdp --json version | grep -q '"version"'
           set +e; bobine-deploy install --host 203.0.113.10 --user test; rc=$?; set -e
           [ "$rc" -eq 2 ] || { echo "install without --yes: exit $rc, 2 expected" >&2; exit 1; }
           # Still alive after 10 s: timeout kills it (124); a crash at startup returns another code.
@@ -157,13 +158,14 @@ jobs:
           [ "$rc" -eq 124 ] || { echo "the application stopped at startup (exit $rc)" >&2; exit 1; }
           sudo apt-get $APT_OPTIONS remove -y bobine-deploy
           test ! -e /usr/bin/bobine-deploy
+          test ! -e /usr/bin/bdp
       - name: Install the rpm (Fedora)
         if: runner.os == 'Linux'
         run: |
           . scripts/ci/container-images.sh
           rpm_file=$(basename "$(ls dist/bobine-deploy-*.${{ matrix.rpm }}.rpm)")
           docker run --rm -v "$PWD/dist:/pkg:ro" "$FEDORA_IMAGE" \
-            bash -c 'dnf -y -q install "/pkg/$1" && test -x /usr/bin/bobine-deploy && rpm -q bobine-deploy' -- "$rpm_file"
+            bash -c 'dnf -y -q install "/pkg/$1" && test -x /usr/bin/bobine-deploy && bdp --json version && rpm -q bobine-deploy' -- "$rpm_file"
       - name: Install, start and uninstall (Windows)
         if: runner.os == 'Windows'
         shell: pwsh

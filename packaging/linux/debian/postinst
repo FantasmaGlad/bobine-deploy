@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+# Alias court de la commande.
+ln -sf bobine-deploy /usr/bin/bdp

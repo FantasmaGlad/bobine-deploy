@@ -1,6 +1,6 @@
 # Bobine Deploy
 
-Install [Bobine](https://github.com/FantasmaGlad/Bobine) on a mini PC of your network over SSH: native window, command line (`bobine-deploy --help`) or JSON-RPC on stdio (`bobine-deploy rpc`). French: [README.fr.md](README.fr.md).
+Install [Bobine](https://github.com/FantasmaGlad/Bobine) on a mini PC of your network over SSH: native window, command line (`bobine-deploy --help`, short alias `bdp`) or JSON-RPC on stdio (`bobine-deploy rpc`). French: [README.fr.md](README.fr.md).
 
 | Platform | Download | Requirements |
 | :--- | :--- | :--- |

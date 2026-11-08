@@ -2,6 +2,7 @@
 
 mod engine;
 mod message;
+mod renderer;
 mod screens;
 mod state;
 mod style;
@@ -21,14 +22,23 @@ pub const COMMANDS: &[&str] = &["scan", "host-key", "trust-host-key", "inspect",
 const LOGO: &[u8] = include_bytes!("../../assets/icons/256x256.png");
 
 pub fn main() -> i32 {
-    let icon = window_icon();
+    let renderer = renderer::select();
+    let launched = std::panic::catch_unwind(launch);
+    match (launched, renderer) {
+        (Ok(code), _) => code,
+        (Err(_), renderer::Renderer::Gpu { .. }) => renderer::relaunch_on_cpu(),
+        (Err(_), renderer::Renderer::Cpu { .. }) => 1,
+    }
+}
+
+fn launch() -> i32 {
     let result = iced::application(boot, update, view)
         .title("Bobine Deploy")
         .theme(theme)
         .window(window::Settings {
             size: Size::new(1040.0, 760.0),
             min_size: Some(Size::new(860.0, 620.0)),
-            icon,
+            icon: window_icon(),
             ..Default::default()
         })
         .run();
