@@ -1,0 +1,25 @@
+[package]
+name = "bobine-deploy"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+publish = false
+description = "Installer et maintenir Bobine sur les machines du réseau, en interface graphique, en ligne de commande ou par JSON-RPC."
+repository = "https://github.com/FantasmaGlad/bobine-deploy"
+homepage = "https://bobine.fit"
+authors = ["FantasmaGlad"]
+
+[[bin]]
+name = "bobine-deploy"
+path = "src/main.rs"
+
+[dependencies]
+bobine-deploy-engine = { path = "../deploy-engine" }
+bobine-deploy-proto = { path = "../deploy-proto" }
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std", "io-util", "sync"] }
+serde_json = "1"
+zeroize = "1"
+
+[target."cfg(windows)".dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
