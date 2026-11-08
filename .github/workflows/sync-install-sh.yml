@@ -1,0 +1,58 @@
+name: Synchronisation d'install.sh
+
+# Après chaque Stable de Bobine : récupère install.sh de la release, vérifie sa signature et son empreinte
+# (scripts/sync-install-sh.py), puis ouvre ou met à jour une PR. La CI de la PR est lancée explicitement : une PR créée
+# par le jeton du workflow ne déclenche pas d'elle-même les autres workflows.
+on:
+  schedule:
+    - cron: "43 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-install-sh
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Comparer et proposer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BRANCH: chore/sync-install-sh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Dernière Stable de Bobine
+        id: latest
+        run: |
+          tag=$(gh release view --repo FantasmaGlad/Bobine --json tagName --jq .tagName)
+          pinned=$(sed -n 's/^tag = "\(.*\)"$/\1/p' bobine-release.toml)
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Bobine Stable : $tag ; épinglé : $pinned"
+          [ "$tag" != "$pinned" ] && echo "change=true" >> "$GITHUB_OUTPUT" || echo "change=false" >> "$GITHUB_OUTPUT"
+      - name: Récupérer et vérifier install.sh
+        if: steps.latest.outputs.change == 'true'
+        run: python3 scripts/sync-install-sh.py --tag "${{ steps.latest.outputs.tag }}"
+      - name: Ouvrir ou mettre à jour la PR
+        if: steps.latest.outputs.change == 'true'
+        env:
+          TAG: ${{ steps.latest.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add bobine-release.toml vendor/install.sh
+          git commit -m "chore(install): embarquer install.sh de bobine $TAG"
+          git push --force origin "$BRANCH"
+          if ! gh pr view "$BRANCH" > /dev/null 2>&1; then
+            gh pr create --head "$BRANCH" --base main --title "chore(install): embarquer install.sh de bobine $TAG" \
+              --body "install.sh de la release $TAG de Bobine, signature de SHA256SUMS et empreinte vérifiées par scripts/sync-install-sh.py."
+          fi
+          gh workflow run ci.yml --ref "$BRANCH"
