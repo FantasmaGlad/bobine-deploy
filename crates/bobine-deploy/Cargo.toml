@@ -22,7 +22,7 @@ serde_json = "1"
 zeroize = "1"
 iced = { version = "0.14", default-features = false, features = ["wgpu", "tiny-skia", "crisp", "x11", "wayland", "tokio", "image-without-codecs"] }
 # Même version que celle d'iced : la sonde du rendu (gui/renderer.rs) partage son wgpu.
-wgpu = "27"
+wgpu = "30"
 # Seul le PNG sert (icônes) : pas d'autres codecs.
 image = { version = "0.25", default-features = false, features = ["png"] }
 rfd = { version = "0.18", default-features = false, features = ["xdg-portal"] }
