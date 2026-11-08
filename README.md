@@ -1,6 +1,28 @@
-# Bobine Deploy
+<p align="center">
+  <img src="crates/bobine-deploy/assets/icons/128x128.png" width="96" height="96" alt="Bobine Deploy">
+</p>
 
-Install [Bobine](https://github.com/FantasmaGlad/Bobine) on a mini PC of your network over SSH: native window, command line (`bobine-deploy --help`, short alias `bdp`) or JSON-RPC on stdio (`bobine-deploy rpc`). French: [README.fr.md](README.fr.md).
+<h1 align="center">Bobine Deploy</h1>
+
+<p align="center">
+  <b>Install <a href="https://github.com/FantasmaGlad/Bobine">Bobine</a> on a mini PC of your network over SSH.</b>
+</p>
+
+<p align="center">
+  <a href="https://github.com/FantasmaGlad/bobine-deploy/releases/latest"><b>Releases</b></a> &nbsp;·&nbsp;
+  <a href="https://bobine.fit"><b>bobine.fit</b></a> &nbsp;·&nbsp;
+  <a href="README.fr.md"><b>Français</b></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/FantasmaGlad/bobine-deploy/actions/workflows/ci.yml"><img src="https://github.com/FantasmaGlad/bobine-deploy/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://github.com/FantasmaGlad/bobine-deploy/releases/latest"><img src="https://img.shields.io/github/v/release/FantasmaGlad/bobine-deploy?label=release&color=brightgreen" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="AGPL-3.0"></a>
+</p>
+
+---
+
+## Download
 
 | Platform | Download | Requirements |
 | :--- | :--- | :--- |
@@ -10,6 +32,19 @@ Install [Bobine](https://github.com/FantasmaGlad/Bobine) on a mini PC of your ne
 | <img src="https://raw.githubusercontent.com/FantasmaGlad/Bobine/main/Assets/Icons/distros/fedora.svg" width="20" height="20" valign="middle" alt="Fedora"> **Fedora, RHEL** | [x86_64](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.1.0/bobine-deploy-0.1.0.x86_64.rpm) · [aarch64](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.1.0/bobine-deploy-0.1.0.aarch64.rpm) | glibc 2.39+ |
 
 Checksums: [SHA256SUMS](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.1.0/SHA256SUMS), signed with the Bobine release key ([SHA256SUMS.asc](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.1.0/SHA256SUMS.asc)).
+
+## Use
+
+```bash
+bobine-deploy                              # window
+bobine-deploy scan                         # find the mini PCs
+bobine-deploy install --host bobine.local --yes
+bobine-deploy rpc                          # JSON-RPC on stdio
+```
+
+Every action of the window exists on the command line (`--help`, `--json`). Short alias on Linux and macOS: `bdp`.
+
+---
 
 License: [AGPL-3.0](LICENSE) · Security: [SECURITY.md](SECURITY.md) · Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 
