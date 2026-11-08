@@ -1,15 +1,15 @@
+use crate::error::AssistantError;
+use crate::events::Events;
+use serde::{Deserialize, Serialize};
+use ssh2::Session;
 use std::io::{Read, Write};
 use std::path::Path;
 use std::time::{Duration, Instant};
-use serde::{Deserialize, Serialize};
-use ssh2::Session;
-use crate::error::AssistantError;
-use crate::events::Events;
 
-use bobine_installer_core::orchestrate::{
+use bobine_deploy_core::orchestrate::{
     build_remote_command, build_remote_command_via, shell_quote, Elevation, InstallOptions as CoreOptions,
 };
-use bobine_installer_core::progress::{classify_line, LineKind, Phase, ProgressState};
+use bobine_deploy_core::progress::{classify_line, LineKind, Phase, ProgressState};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RunInstallParams {
@@ -105,7 +105,7 @@ fn progress_to_update(state: &ProgressState) -> ProgressUpdate {
 /// embarqué s'amorce lui-même : il récupère le code de la version choisie
 /// (Stable ou Bêta) puis se relance depuis ce dépôt. Épinglé à la version de
 /// l'assistant : pas de téléchargement d'un script sans rapport avec lui.
-const EMBEDDED_INSTALL_SH: &str = include_str!("../../../../install.sh");
+const EMBEDDED_INSTALL_SH: &str = include_str!("../../../vendor/install.sh");
 
 fn remote_script_path() -> String {
     let nanos = std::time::SystemTime::now()
@@ -224,7 +224,7 @@ pub async fn start_installation(app: tauri::AppHandle, mut params: RunInstallPar
         .map_err(|e| format!("Erreur d'exécution de tâche : {e}"))?
 }
 
-/// Installation complète sur la cible (bloquante) : partagée par l'interface et par `bobine-assistant install`.
+/// Installation complète sur la cible (bloquante) : partagée par l'interface et par `bobine-deploy install`.
 pub fn run_installation(events: &dyn Events, mut params: RunInstallParams) -> Result<(), AssistantError> {
     if params.mock_replay {
         return run_mock_installation(events).map_err(AssistantError::from);
@@ -246,7 +246,11 @@ pub fn run_installation(events: &dyn Events, mut params: RunInstallParams) -> Re
             Some(path) => (path, false),
             None => {
                 let remote = remote_script_path();
-                crate::events::send(events, "install_log", &"> Envoi de l'installateur sur la cible…".to_string());
+                crate::events::send(
+                    events,
+                    "install_log",
+                    &"> Envoi de l'installateur sur la cible…".to_string(),
+                );
                 upload_install_script(&sess, &remote)?;
                 (remote, true)
             }
@@ -330,7 +334,11 @@ pub fn run_installation(events: &dyn Events, mut params: RunInstallParams) -> Re
                     // Une cible qui n'envoie jamais de saut de ligne ne doit pas faire croître la mémoire sans fin.
                     if pending.len() > MAX_PENDING_BYTES && !pending.contains(&b'\n') {
                         pending.clear();
-                        crate::events::send(events, "install_log", &"[ATTENTION] Sortie distante sans fin de ligne ignorée".to_string());
+                        crate::events::send(
+                            events,
+                            "install_log",
+                            &"[ATTENTION] Sortie distante sans fin de ligne ignorée".to_string(),
+                        );
                     }
 
                     // L'invite de mot de passe n'est jamais suivie d'un saut
@@ -378,7 +386,11 @@ pub fn run_installation(events: &dyn Events, mut params: RunInstallParams) -> Re
                                 crate::events::send(events, "install_log", &line.to_string());
                             }
                             LineKind::Malformed(err) => {
-                                crate::events::send(events, "install_log", &format!("[ATTENTION] Évènement malformé : {err}"));
+                                crate::events::send(
+                                    events,
+                                    "install_log",
+                                    &format!("[ATTENTION] Évènement malformé : {err}"),
+                                );
                             }
                         }
                     }
@@ -432,7 +444,8 @@ pub fn run_installation(events: &dyn Events, mut params: RunInstallParams) -> Re
         }
         if state.phase != Phase::Succeeded {
             return Err(AssistantError::Failed(
-                "L'installation s'est terminée sans annoncer sa réussite (run_end). Consultez le journal ci-dessus.".to_string(),
+                "L'installation s'est terminée sans annoncer sa réussite (run_end). Consultez le journal ci-dessus."
+                    .to_string(),
             ));
         }
         Ok(())
@@ -445,7 +458,10 @@ mod redaction_tests {
 
     #[test]
     fn secret_never_reaches_the_log() {
-        assert_eq!(redact_secret("mot de passe: hunter2 ok", Some("hunter2")), "mot de passe: *** ok");
+        assert_eq!(
+            redact_secret("mot de passe: hunter2 ok", Some("hunter2")),
+            "mot de passe: *** ok"
+        );
         assert_eq!(redact_secret("rien", Some("hunter2")), "rien");
         assert_eq!(redact_secret("rien", Some("")), "rien");
         assert_eq!(redact_secret("rien", None), "rien");

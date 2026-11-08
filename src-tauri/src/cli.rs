@@ -1,4 +1,4 @@
-//! Commande `bobine-assistant` : tout ce que fait l'interface, en ligne de commande, sur les mêmes fonctions
+//! Commande `bobine-deploy` : tout ce que fait l'interface, en ligne de commande, sur les mêmes fonctions
 //! (`discovery::scan`, `connection::inspect`, `install::run_installation`). Même contrat que la commande `bobine` :
 //! sortie lisible ou `--json` sur stdout, messages sur stderr, codes de sortie 0 succès, 1 échec, 2 usage,
 //! 3 cible injoignable, 4 authentification refusée.
@@ -19,7 +19,7 @@ use crate::commands::install::{run_installation, RunInstallParams};
 use crate::error::AssistantError;
 use crate::events::Events;
 
-/// `println!` qui ne panique pas quand la sortie est fermée (`bobine-assistant scan | head`).
+/// `println!` qui ne panique pas quand la sortie est fermée (`bobine-deploy scan | head`).
 macro_rules! out {
     ($($arg:tt)*) => {{
         let _ = writeln!(std::io::stdout().lock(), $($arg)*);
@@ -33,10 +33,10 @@ pub const EXIT_UNREACHABLE: i32 = 3;
 pub const EXIT_REFUSED: i32 = 4;
 
 /// Sous-commandes reconnues : leur présence en argument lance la ligne de commande au lieu de la fenêtre.
-pub const COMMANDS: [&str; 6] = ["scan", "host-key", "inspect", "install", "update", "version"];
+pub const COMMANDS: [&str; 5] = ["scan", "host-key", "inspect", "install", "version"];
 
 #[derive(Parser, Debug)]
-#[command(name = "bobine-assistant", about = "Installer Bobine sur un mini PC du réseau, sans interface.", version = env!("BOBINE_VERSION"))]
+#[command(name = "bobine-deploy", about = "Installer Bobine sur un mini PC du réseau, sans interface.", version = env!("BOBINE_VERSION"))]
 struct Cli {
     /// Sortie JSON sur stdout (JSON lignes pendant une installation).
     #[arg(long, global = true)]
@@ -95,24 +95,8 @@ enum Command {
         #[arg(long)]
         yes: bool,
     },
-    /// Mise à jour de l'assistant lui-même (même vérification de signature que l'interface).
-    Update {
-        #[command(subcommand)]
-        action: UpdateAction,
-    },
-    /// Version de l'assistant.
+    /// Version de Bobine Deploy.
     Version,
-}
-
-#[derive(Subcommand, Debug)]
-enum UpdateAction {
-    /// Chercher une version plus récente sur le canal de ce build.
-    Check,
-    /// Télécharger, vérifier et installer la version plus récente (exige --yes) ; relancer ensuite l'assistant.
-    Apply {
-        #[arg(long)]
-        yes: bool,
-    },
 }
 
 #[derive(clap::Args, Debug)]
@@ -156,7 +140,9 @@ enum Elevation {
 
 /// Vrai quand les arguments demandent la ligne de commande : une sous-commande, ou `--help`/`--version` seuls.
 pub fn is_invocation(args: &[String]) -> bool {
-    args.iter().skip(1).any(|a| COMMANDS.contains(&a.as_str()) || matches!(a.as_str(), "-h" | "--help" | "-V" | "--version"))
+    args.iter()
+        .skip(1)
+        .any(|a| COMMANDS.contains(&a.as_str()) || matches!(a.as_str(), "-h" | "--help" | "-V" | "--version"))
 }
 
 /// Événements de l'installation et du scan sur la console : JSON lignes sur stdout avec `--json`, sinon journal et
@@ -183,7 +169,10 @@ impl Events for Console {
             "assistant-update-progress" => eprint!(
                 "\rTéléchargement : {} Mo{}",
                 payload["downloaded"].as_u64().unwrap_or(0) / 1_048_576,
-                payload["total"].as_u64().map(|t| format!(" / {} Mo", t / 1_048_576)).unwrap_or_default()
+                payload["total"]
+                    .as_u64()
+                    .map(|t| format!(" / {} Mo", t / 1_048_576))
+                    .unwrap_or_default()
             ),
             "scan_progress" => eprint!(
                 "\rSondage : {}/{} adresses, {} trouvée(s)",
@@ -217,9 +206,12 @@ pub fn main(args: Vec<String>) -> i32 {
                 AssistantError::Usage(_) => EXIT_USAGE,
             };
             if json {
-                out!("{}", json!({ "event": "error", "data": { "code": code, "message": error.message() } }));
+                out!(
+                    "{}",
+                    json!({ "event": "error", "data": { "code": code, "message": error.message() } })
+                );
             }
-            eprintln!("bobine-assistant : {error}");
+            eprintln!("bobine-deploy : {error}");
             code
         }
     }
@@ -233,7 +225,7 @@ fn run(cli: Cli) -> Result<(), AssistantError> {
             if cli.json {
                 out!("{}", json!({ "version": version, "commit": commit }));
             } else {
-                out!("bobine-assistant {version} ({commit})");
+                out!("bobine-deploy {version} ({commit})");
             }
             Ok(())
         }
@@ -252,14 +244,17 @@ fn run(cli: Cli) -> Result<(), AssistantError> {
                         printable(device.hostname.as_deref().unwrap_or("-")),
                         if device.bobine_open { "Bobine " } else { "" },
                         if device.ssh_open { "SSH " } else { "" },
-                        if ports.is_empty() { String::new() } else { format!("(ports {})", ports.join(", ")) },
+                        if ports.is_empty() {
+                            String::new()
+                        } else {
+                            format!("(ports {})", ports.join(", "))
+                        },
                     );
                 }
                 eprintln!("{} appareil(s).", devices.len());
             }
             Ok(())
         }
-        Command::Update { action } => update(action, &console, cli.json),
         Command::HostKey { host, port } => {
             let info = host_key(&host, port)?;
             if cli.json {
@@ -270,7 +265,12 @@ fn run(cli: Cli) -> Result<(), AssistantError> {
                     "changed" => "CHANGÉE : connexion refusée",
                     _ => "inconnue",
                 };
-                out!("{} {}  ({status}, {})", info.key_type, info.fingerprint, info.known_hosts);
+                out!(
+                    "{} {}  ({status}, {})",
+                    info.key_type,
+                    info.fingerprint,
+                    info.known_hosts
+                );
             }
             Ok(())
         }
@@ -285,16 +285,34 @@ fn run(cli: Cli) -> Result<(), AssistantError> {
                 out!("Système      {}", report.os_name);
                 out!("Architecture {}", report.arch);
                 out!("Processeur   {}", report.cpu_model);
-                out!("Mémoire      {} Mo, disque libre {} Go", report.memory_total_mb, report.disk_free_gb);
+                out!(
+                    "Mémoire      {} Mo, disque libre {} Go",
+                    report.memory_total_mb,
+                    report.disk_free_gb
+                );
                 out!("Graphismes   {}", report.gpu_info);
                 out!(
                     "Élévation    {}",
-                    if report.needs_root_password { "su (mot de passe root requis)" } else { "sudo" }
+                    if report.needs_root_password {
+                        "su (mot de passe root requis)"
+                    } else {
+                        "sudo"
+                    }
                 );
             }
             Ok(())
         }
-        Command::Install { target, channel, elevation, no_kiosk, skip_packages, script, simulate, root_password_stdin, yes } => {
+        Command::Install {
+            target,
+            channel,
+            elevation,
+            no_kiosk,
+            skip_packages,
+            script,
+            simulate,
+            root_password_stdin,
+            yes,
+        } => {
             if !yes {
                 return Err(AssistantError::Usage(
                     "L'installation modifie la cible : relancez avec --yes pour confirmer.".to_string(),
@@ -341,65 +359,6 @@ fn run(cli: Cli) -> Result<(), AssistantError> {
     }
 }
 
-/// Le greffon de mise à jour exige une application Tauri : construite ici sans fenêtre, jamais lancée. Il lui faut une
-/// session graphique sous Linux (l'assistant est une application de bureau).
-fn update(action: UpdateAction, console: &Console, json: bool) -> Result<(), AssistantError> {
-    use tauri_plugin_updater::UpdaterExt;
-
-    if let UpdateAction::Apply { yes: false } = action {
-        return Err(AssistantError::Usage("La mise à jour remplace l'assistant : relancez avec --yes pour confirmer.".to_string()));
-    }
-    let mut context = crate::context();
-    context.config_mut().app.windows.clear();
-    let app = tauri::Builder::default()
-        .plugin(tauri_plugin_updater::Builder::new().build())
-        .build(context)
-        .map_err(|e| AssistantError::Failed(format!("Initialisation de l'assistant impossible (session graphique requise) : {e}")))?;
-    let current = app.package_info().version.to_string();
-    let updater = app.updater().map_err(|e| AssistantError::Failed(e.to_string()))?;
-    tauri::async_runtime::block_on(async {
-        let update = updater.check().await.map_err(|e| match e {
-            tauri_plugin_updater::Error::TargetNotFound(_) | tauri_plugin_updater::Error::TargetsNotFound(_) => {
-                AssistantError::Failed(crate::commands::update::describe(e))
-            }
-            other => AssistantError::Unreachable(other.to_string()),
-        })?;
-        let Some(update) = update else {
-            if json {
-                out!("{}", json!({ "available": false, "current": current }));
-            } else {
-                out!("Bobine Assistant {current} est à jour.");
-            }
-            return Ok(());
-        };
-        if let UpdateAction::Check = action {
-            if json {
-                out!("{}", json!({ "available": true, "current": current, "version": update.version }));
-            } else {
-                out!("Bobine Assistant {} est disponible (installée : {current}).", update.version);
-            }
-            return Ok(());
-        }
-        let mut downloaded = 0u64;
-        update
-            .download_and_install(
-                |chunk, total| {
-                    downloaded += chunk as u64;
-                    console.send("assistant-update-progress", json!({ "downloaded": downloaded, "total": total }));
-                },
-                || {},
-            )
-            .await
-            .map_err(|e| AssistantError::Failed(e.to_string()))?;
-        if json {
-            out!("{}", json!({ "event": "done", "data": { "ok": true, "version": update.version } }));
-        } else {
-            eprintln!("Bobine Assistant {} installé : relancez-le.", update.version);
-        }
-        Ok(())
-    })
-}
-
 /// `--trust-host-key` : enregistre la clé de la cible si son empreinte est celle donnée.
 fn trust(target: &Target) -> Result<(), AssistantError> {
     if let Some(fingerprint) = target.trust_host_key.as_deref() {
@@ -421,14 +380,24 @@ fn credentials(target: &Target, input: &mut impl BufRead) -> Result<SshCredentia
     } else {
         std::env::var("BOBINE_SSH_PASSWORD").ok().filter(|p| !p.is_empty())
     };
-    Ok(SshCredentials { host: target.host.clone(), port: target.port, username, password, key_path: target.key.clone(), local_keys: target.local_keys })
+    Ok(SshCredentials {
+        host: target.host.clone(),
+        port: target.port,
+        username,
+        password,
+        key_path: target.key.clone(),
+        local_keys: target.local_keys,
+    })
 }
 
 /// Texte venu du réseau (nom d'hôte, journal de la cible) sans caractères de contrôle ni de direction : il ne peut ni
 /// piloter le terminal (séquences ANSI, OSC) ni réordonner visuellement la ligne (U+202E...).
 fn printable(text: &str) -> String {
     text.chars()
-        .filter(|c| !c.is_control() && !matches!(*c, '\u{200E}' | '\u{200F}' | '\u{202A}'..='\u{202E}' | '\u{2066}'..='\u{2069}'))
+        .filter(|c| {
+            !c.is_control()
+                && !matches!(*c, '\u{200E}' | '\u{200F}' | '\u{202A}'..='\u{202E}' | '\u{2066}'..='\u{2069}')
+        })
         .collect()
 }
 
@@ -464,26 +433,53 @@ mod tests {
 
     #[test]
     fn subcommands_and_help_start_the_command_line() {
-        assert!(is_invocation(&args(&["bobine-assistant", "scan"])));
-        assert!(is_invocation(&args(&["bobine-assistant", "--json", "version"])));
-        assert!(is_invocation(&args(&["bobine-assistant", "--help"])));
-        assert!(!is_invocation(&args(&["bobine-assistant"])));
-        assert!(!is_invocation(&args(&["bobine-assistant", "-psn_0_12345"])));
+        assert!(is_invocation(&args(&["bobine-deploy", "scan"])));
+        assert!(is_invocation(&args(&["bobine-deploy", "--json", "version"])));
+        assert!(is_invocation(&args(&["bobine-deploy", "--help"])));
+        assert!(!is_invocation(&args(&["bobine-deploy"])));
+        assert!(!is_invocation(&args(&["bobine-deploy", "-psn_0_12345"])));
     }
 
     #[test]
     fn usage_errors_and_missing_confirmation() {
-        assert_eq!(main(args(&["bobine-assistant", "install"])), EXIT_USAGE);
-        assert_eq!(main(args(&["bobine-assistant", "install", "--host", "203.0.113.10", "--channel", "nightly"])), EXIT_USAGE);
-        assert_eq!(main(args(&["bobine-assistant", "install", "--host", "203.0.113.10", "--user", "admin"])), EXIT_USAGE);
-        assert_eq!(main(args(&["bobine-assistant", "update", "apply"])), EXIT_USAGE);
-        assert_eq!(main(args(&["bobine-assistant", "version"])), EXIT_OK);
+        assert_eq!(main(args(&["bobine-deploy", "install"])), EXIT_USAGE);
+        assert_eq!(
+            main(args(&[
+                "bobine-deploy",
+                "install",
+                "--host",
+                "203.0.113.10",
+                "--channel",
+                "nightly"
+            ])),
+            EXIT_USAGE
+        );
+        assert_eq!(
+            main(args(&[
+                "bobine-deploy",
+                "install",
+                "--host",
+                "203.0.113.10",
+                "--user",
+                "admin"
+            ])),
+            EXIT_USAGE
+        );
+        assert_eq!(main(args(&["bobine-deploy", "version"])), EXIT_OK);
     }
 
     #[test]
     fn simulated_install_runs_the_shared_installation() {
         let code = main(args(&[
-            "bobine-assistant", "--json", "install", "--host", "203.0.113.10", "--user", "admin", "--simulate", "--yes",
+            "bobine-deploy",
+            "--json",
+            "install",
+            "--host",
+            "203.0.113.10",
+            "--user",
+            "admin",
+            "--simulate",
+            "--yes",
         ]));
         assert_eq!(code, EXIT_OK);
     }
@@ -491,13 +487,25 @@ mod tests {
     #[test]
     fn unreachable_target_has_its_own_exit_code() {
         // Port 9 de la boucle locale : connexion refusée immédiatement, sans réseau.
-        let code = main(args(&["bobine-assistant", "inspect", "--host", "127.0.0.1", "--port", "9", "--user", "admin"]));
+        let code = main(args(&[
+            "bobine-deploy",
+            "inspect",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "9",
+            "--user",
+            "admin",
+        ]));
         assert_eq!(code, EXIT_UNREACHABLE);
     }
 
     #[test]
     fn network_text_cannot_drive_the_terminal() {
-        assert_eq!(printable("borne\u{1b}]0;titre\u{7}\u{202E}gpj.exe"), "borne]0;titregpj.exe");
+        assert_eq!(
+            printable("borne\u{1b}]0;titre\u{7}\u{202E}gpj.exe"),
+            "borne]0;titregpj.exe"
+        );
         assert_eq!(printable("[INFO] Étape 3/14 terminée"), "[INFO] Étape 3/14 terminée");
     }
 

@@ -1,7 +1,6 @@
-pub mod discovery;
-pub mod ssh_auth;
 pub mod connection;
-pub mod install;
-pub mod version;
-pub mod update;
+pub mod discovery;
 pub mod host_key;
+pub mod install;
+pub mod ssh_auth;
+pub mod version;

@@ -1,9 +1,9 @@
-# Espace de travail de l'assistant d'installation graphique & télécommande Bobine.
+# Espace de travail de Bobine Deploy : bibliothèque pure (core) et application (src-tauri).
 [workspace]
 resolver = "2"
 members = ["core", "src-tauri"]
 
-# Paquets publiés (bureau et Android) : sans symboles de débogage, optimisés pour la taille.
+# Paquets publiés : sans symboles de débogage, optimisés pour la taille.
 [profile.release]
 strip = true
 lto = true

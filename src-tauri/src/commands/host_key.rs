@@ -61,12 +61,16 @@ fn entry_name(host: &str, port: u16) -> String {
 
 /// Compare la clé présentée par la session (négociée, non authentifiée) au fichier `known_hosts`.
 pub(crate) fn check(sess: &Session, host: &str, port: u16) -> Result<HostKeyInfo, String> {
-    let (key, kind) = sess.host_key().ok_or_else(|| format!("{host}:{port} n'a présenté aucune clé d'hôte SSH."))?;
+    let (key, kind) = sess
+        .host_key()
+        .ok_or_else(|| format!("{host}:{port} n'a présenté aucune clé d'hôte SSH."))?;
     let hash = sess
         .host_key_hash(HashType::Sha256)
         .ok_or_else(|| "Empreinte de la clé d'hôte indisponible.".to_string())?;
     let path = known_hosts_path()?;
-    let mut known = sess.known_hosts().map_err(|e| format!("Lecture des clés d'hôte connues impossible : {e}"))?;
+    let mut known = sess
+        .known_hosts()
+        .map_err(|e| format!("Lecture des clés d'hôte connues impossible : {e}"))?;
     if path.exists() {
         known
             .read_file(&path, KnownHostFileKind::OpenSSH)
@@ -135,13 +139,22 @@ pub fn trust_host_key(host: &str, port: u16, fingerprint: &str) -> Result<HostKe
         "known" => Ok(info),
         "changed" => Err(AssistantError::Refused(changed_message(&info))),
         _ => {
-            let (key, kind) = sess.host_key().ok_or_else(|| AssistantError::Failed("Clé d'hôte absente.".to_string()))?;
-            let key_type = key_type_name(kind)
-                .ok_or_else(|| AssistantError::Failed("Type de clé d'hôte inconnu : enregistrement refusé.".to_string()))?;
+            let (key, kind) = sess
+                .host_key()
+                .ok_or_else(|| AssistantError::Failed("Clé d'hôte absente.".to_string()))?;
+            let key_type = key_type_name(kind).ok_or_else(|| {
+                AssistantError::Failed("Type de clé d'hôte inconnu : enregistrement refusé.".to_string())
+            })?;
             let path = PathBuf::from(&info.known_hosts);
-            append(&path, &format!("{} {} {}\n", entry_name(host, port), key_type, STANDARD.encode(key)))
-                .map_err(AssistantError::Failed)?;
-            Ok(HostKeyInfo { status: "known".to_string(), ..info })
+            append(
+                &path,
+                &format!("{} {} {}\n", entry_name(host, port), key_type, STANDARD.encode(key)),
+            )
+            .map_err(AssistantError::Failed)?;
+            Ok(HostKeyInfo {
+                status: "known".to_string(),
+                ..info
+            })
         }
     }
 }
@@ -155,7 +168,8 @@ fn append(path: &std::path::Path, line: &str) -> Result<(), String> {
         .append(true)
         .open(path)
         .map_err(|e| format!("Ouverture de {} impossible : {e}", path.display()))?;
-    file.write_all(line.as_bytes()).map_err(|e| format!("Écriture dans {} impossible : {e}", path.display()))
+    file.write_all(line.as_bytes())
+        .map_err(|e| format!("Écriture dans {} impossible : {e}", path.display()))
 }
 
 #[tauri::command]
@@ -191,7 +205,10 @@ mod tests {
         let info = host_key("127.0.0.1", 22).unwrap();
         assert_eq!(info.status, "unknown");
         assert!(trust_host_key("127.0.0.1", 22, "SHA256:faux").is_err());
-        assert_eq!(trust_host_key("127.0.0.1", 22, &info.fingerprint).unwrap().status, "known");
+        assert_eq!(
+            trust_host_key("127.0.0.1", 22, &info.fingerprint).unwrap().status,
+            "known"
+        );
         assert_eq!(host_key("127.0.0.1", 22).unwrap().status, "known");
         let _ = std::fs::remove_dir_all(dir);
     }

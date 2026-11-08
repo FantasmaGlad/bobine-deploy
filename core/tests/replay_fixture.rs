@@ -3,9 +3,7 @@
 //! [`ProgressState`] et vérifie la cohérence de bout en bout. Garde-fou contre
 //! toute divergence future entre l'émetteur (install.sh) et le parseur.
 
-use bobine_installer_core::progress::{
-    classify_line, Event, LineKind, Mode, Phase, ProgressState, RunStatus, StepStatus,
-};
+use bobine_deploy_core::progress::{classify_line, Event, LineKind, Mode, Phase, ProgressState, RunStatus, StepStatus};
 
 const STREAM: &str = include_str!("fixtures/install-events.jsonl");
 
@@ -82,9 +80,21 @@ fn pct_is_monotone_non_decreasing() {
 #[test]
 fn every_step_has_a_stable_slug() {
     let expected = [
-        "packages", "gpu-access", "python-env", "frontend-build", "config", "cli-tool",
-        "uninstaller", "backend-service", "kiosk", "audio", "sudoers", "ntp", "mdns-redirect",
-        "watchdog", "activation",
+        "packages",
+        "gpu-access",
+        "python-env",
+        "frontend-build",
+        "config",
+        "cli-tool",
+        "uninstaller",
+        "backend-service",
+        "kiosk",
+        "audio",
+        "sudoers",
+        "ntp",
+        "mdns-redirect",
+        "watchdog",
+        "activation",
     ];
     let mut seen = Vec::new();
     for line in STREAM.lines() {

@@ -83,17 +83,41 @@ pub fn is_scannable_ipv4(ip: Ipv4Addr) -> bool {
 /// contient jamais la borne, et le balayer ralentit le scan pour rien.
 pub fn is_virtual_interface(name: &str) -> bool {
     let n = name.to_ascii_lowercase();
-    ["docker", "br-", "veth", "virbr", "vmnet", "vboxnet", "vethernet", "cni", "flannel", "podman", "lxc", "lxd"]
-        .iter()
-        .any(|prefix| n.starts_with(prefix))
+    [
+        "docker",
+        "br-",
+        "veth",
+        "virbr",
+        "vmnet",
+        "vboxnet",
+        "vethernet",
+        "cni",
+        "flannel",
+        "podman",
+        "lxc",
+        "lxd",
+    ]
+    .iter()
+    .any(|prefix| n.starts_with(prefix))
 }
 
 /// Interface de tunnel/VPN : balayée seulement s'il n'y a rien d'autre.
 pub fn is_tunnel_interface(name: &str, ip: Ipv4Addr) -> bool {
     let n = name.to_ascii_lowercase();
-    let by_name = ["tun", "tap", "utun", "wg", "tailscale", "zt", "ppp", "ipsec", "awdl", "llw"]
-        .iter()
-        .any(|prefix| n.starts_with(prefix));
+    let by_name = [
+        "tun",
+        "tap",
+        "utun",
+        "wg",
+        "tailscale",
+        "zt",
+        "ppp",
+        "ipsec",
+        "awdl",
+        "llw",
+    ]
+    .iter()
+    .any(|prefix| n.starts_with(prefix));
     // 100.64.0.0/10 : espace CGNAT, utilisé par Tailscale et les opérateurs.
     let o = ip.octets();
     by_name || (o[0] == 100 && (64..=127).contains(&o[1]))
@@ -150,9 +174,18 @@ pub fn parse_arp_a(content: &str) -> Vec<(Ipv4Addr, String)> {
 }
 
 fn looks_like_mac(tok: &str) -> bool {
-    let sep = if tok.contains(':') { ':' } else if tok.contains('-') { '-' } else { return false };
+    let sep = if tok.contains(':') {
+        ':'
+    } else if tok.contains('-') {
+        '-'
+    } else {
+        return false;
+    };
     let parts: Vec<&str> = tok.split(sep).collect();
-    parts.len() == 6 && parts.iter().all(|p| (1..=2).contains(&p.len()) && p.chars().all(|c| c.is_ascii_hexdigit()))
+    parts.len() == 6
+        && parts
+            .iter()
+            .all(|p| (1..=2).contains(&p.len()) && p.chars().all(|c| c.is_ascii_hexdigit()))
 }
 
 /// Un candidat trouvé sur le réseau. Les champs optionnels se remplissent
@@ -233,10 +266,7 @@ mod tests {
 
     #[test]
     fn network_address_zeroes_last_octet() {
-        assert_eq!(
-            network_v24(Ipv4Addr::new(10, 0, 0, 30)),
-            Ipv4Addr::new(10, 0, 0, 0)
-        );
+        assert_eq!(network_v24(Ipv4Addr::new(10, 0, 0, 30)), Ipv4Addr::new(10, 0, 0, 0));
         assert_eq!(
             network_v24(Ipv4Addr::new(192, 168, 1, 42)),
             Ipv4Addr::new(192, 168, 1, 0)
@@ -278,14 +308,14 @@ mod tests {
             os_hint_from_ports(&[80, 445, 3389]),
             Some("Windows (Bureau à distance)".to_string())
         );
-        assert_eq!(
-            os_hint_from_ports(&[445]),
-            Some("Windows / Partage Samba".to_string())
-        );
+        assert_eq!(os_hint_from_ports(&[445]), Some("Windows / Partage Samba".to_string()));
         assert_eq!(os_hint_from_ports(&[9100]), Some("Imprimante réseau".to_string()));
         assert_eq!(os_hint_from_ports(&[1903]), Some("Bobine (sans SSH)".to_string()));
         assert_eq!(os_hint_from_ports(&[8000]), Some("Bobine (sans SSH)".to_string()));
-        assert_eq!(os_hint_from_ports(&[443]), Some("Appareil avec interface web".to_string()));
+        assert_eq!(
+            os_hint_from_ports(&[443]),
+            Some("Appareil avec interface web".to_string())
+        );
         assert_eq!(os_hint_from_ports(&[]), None);
     }
 
@@ -319,8 +349,14 @@ mod tests {
 
     #[test]
     fn network_spec_accepts_ip_or_cidr() {
-        assert_eq!(parse_network_spec("192.168.2.10"), Some((Ipv4Addr::new(192, 168, 2, 10), 24)));
-        assert_eq!(parse_network_spec(" 10.1.0.0/22 "), Some((Ipv4Addr::new(10, 1, 0, 0), 22)));
+        assert_eq!(
+            parse_network_spec("192.168.2.10"),
+            Some((Ipv4Addr::new(192, 168, 2, 10), 24))
+        );
+        assert_eq!(
+            parse_network_spec(" 10.1.0.0/22 "),
+            Some((Ipv4Addr::new(10, 1, 0, 0), 22))
+        );
         assert_eq!(parse_network_spec("10.1.0.0/40"), None);
         assert_eq!(parse_network_spec("bobine.local"), None);
     }
@@ -371,8 +407,7 @@ mod tests {
 
     #[test]
     fn candidate_builder_infers_os() {
-        let c = Candidate::new(Ipv4Addr::new(10, 0, 0, 30))
-            .with_ssh_banner("SSH-2.0-OpenSSH_9.2p1 Debian-2");
+        let c = Candidate::new(Ipv4Addr::new(10, 0, 0, 30)).with_ssh_banner("SSH-2.0-OpenSSH_9.2p1 Debian-2");
         assert_eq!(c.os_hint.as_deref(), Some("Debian"));
         assert_eq!(c.ssh_banner.as_deref(), Some("SSH-2.0-OpenSSH_9.2p1 Debian-2"));
     }

@@ -1,5 +1,5 @@
 //! Erreur des opérations partagées par l'interface et la ligne de commande : la cause (cible injoignable,
-//! authentification refusée, autre échec) donne le code de sortie de `bobine-assistant` ; l'interface n'en garde que
+//! authentification refusée, autre échec) donne le code de sortie de `bobine-deploy` ; l'interface n'en garde que
 //! le message.
 
 use std::fmt;
