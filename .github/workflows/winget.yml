@@ -1,0 +1,42 @@
+name: winget
+
+# Après la CI verte d'un tag vX.Y.Z, ou à la demande pour une release existante : manifestes winget des installeurs .exe,
+# écrits depuis SHA256SUMS (signature vérifiée avec la clé épinglée) et joints à la release. La PR vers
+# microsoft/winget-pkgs reste une action du mainteneur.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release (vX.Y.Z)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  manifests:
+    name: Manifestes winget
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' &&
+      startsWith(github.event.workflow_run.head_branch, 'v'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Tag
+        run: '[[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::vX.Y.Z attendu : $TAG"; exit 1; }'
+      - name: Manifestes
+        run: |
+          gh release download "$TAG" -p SHA256SUMS -p SHA256SUMS.asc -D "$RUNNER_TEMP/release"
+          python3 scripts/winget "$TAG" "$RUNNER_TEMP/release" "$RUNNER_TEMP/winget"
+      - name: Joindre à la release
+        run: gh release upload "$TAG" "$RUNNER_TEMP"/winget/*.yaml --clobber
