@@ -8,6 +8,10 @@ updates:
       cargo-dependencies:
         patterns:
           - "*"
+    ignore:
+      # wgpu suit la version qu'embarque iced : une montée seule compilerait deux piles graphiques.
+      - dependency-name: "wgpu"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

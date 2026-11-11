@@ -23,7 +23,7 @@ fn main() {
         .and_then(|rest| rest.strip_suffix('"'))
         .expect("install_sh_sha256 absent de bobine-release.toml");
     let script = std::fs::read(root.join("vendor/install.sh")).expect("vendor/install.sh illisible");
-    let actual = format!("{:x}", Sha256::digest(&script));
+    let actual: String = Sha256::digest(&script).iter().map(|b| format!("{b:02x}")).collect();
     assert_eq!(
         actual, expected,
         "vendor/install.sh ne correspond pas à bobine-release.toml : scripts/sync-install-sh.py"
