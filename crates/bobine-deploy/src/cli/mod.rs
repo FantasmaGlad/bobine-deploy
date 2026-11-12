@@ -4,9 +4,9 @@
 //! 0 succès, 1 échec, 2 usage, 3 cible injoignable, 4 clé d'hôte ou authentification refusée.
 
 mod args;
+mod commands;
 mod input;
 mod output;
-mod request;
 
 use std::io::Write;
 
@@ -83,7 +83,7 @@ pub fn exit_code(kind: ErrorKind) -> i32 {
 
 async fn run(cli: Cli) -> Result<(), Error> {
     let console = Console { json: cli.json };
-    let command = request::command(cli.command).await?;
+    let command = commands::command(cli.command).await?;
     let result = execute(command, &console).await?;
     if cli.json {
         output::print_json(&result);
