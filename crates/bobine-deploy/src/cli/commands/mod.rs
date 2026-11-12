@@ -1,5 +1,3 @@
-//! Traduction d'une sous-commande en commande du moteur : un fichier par commande du catalogue.
-
 mod host_key;
 mod inspect;
 mod install;
@@ -48,7 +46,6 @@ pub async fn command(command: Command) -> Result<EngineCommand, Error> {
     })
 }
 
-/// `--trust-host-key` : enregistre la clé de la cible si son empreinte est celle donnée.
 async fn trust(target: &Target) -> Result<(), Error> {
     if let Some(fingerprint) = target.trust_host_key.clone() {
         let command = trust_host_key::request(target.host.clone(), target.port, fingerprint);

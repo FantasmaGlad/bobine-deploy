@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-# Vérifie les assets d'une release avant publication : exactement les paquets attendus pour chaque système et chaque
-# architecture, plus SHA256SUMS et SHA256SUMS.asc ; chaque paquet listé avec sa vraie empreinte.
-#
-# Usage : verify-release-assets.sh <dossier> <version>
 set -euo pipefail
 export LC_ALL=C
 DIR="${1:?dossier des assets}"

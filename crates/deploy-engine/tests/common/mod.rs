@@ -1,7 +1,3 @@
-//! Serveur OpenSSH jetable pour les tests d'intégration : lancé sans droits root sur un port libre de 127.0.0.1, avec
-//! une clé d'hôte et une clé d'utilisateur générées pour l'occasion. Connexion possible pour l'utilisateur courant
-//! seulement, par clé. Absent (`sshd` introuvable), les tests concernés sont ignorés.
-
 #![allow(dead_code)]
 
 use std::net::TcpListener;
@@ -94,7 +90,6 @@ impl TestServer {
             .expect("utilisateur courant inconnu")
     }
 
-    /// Empreinte de la clé d'hôte, telle que `ssh-keygen -lf` l'affiche.
     pub fn host_fingerprint(&self) -> String {
         let out = Command::new("ssh-keygen")
             .args(["-l", "-E", "sha256", "-f"])

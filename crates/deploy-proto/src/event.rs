@@ -1,10 +1,7 @@
-//! Événements émis pendant une commande.
-
 use serde::{Deserialize, Serialize};
 
 use crate::Device;
 
-/// Événement émis pendant une commande.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "event", content = "data", rename_all = "kebab-case")]
 pub enum Event {
@@ -19,7 +16,6 @@ pub struct ScanProgress {
     pub done: usize,
     pub total: usize,
     pub found: usize,
-    /// Réseaux balayés, par exemple `192.168.1.0/24 (wlp3s0)`.
     pub networks: Vec<String>,
 }
 

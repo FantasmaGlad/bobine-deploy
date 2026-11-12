@@ -1,5 +1,3 @@
-//! Audit de la cible : système, architecture, politique d'élévation et matériel.
-
 use bobine_deploy_core::privilege::{decide, PrivilegeDecision};
 use bobine_deploy_proto::{Credentials, Elevation, Error, Inspection};
 

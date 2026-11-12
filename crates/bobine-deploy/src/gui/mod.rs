@@ -1,5 +1,3 @@
-//! Interface graphique native (iced) : aucun navigateur ni WebView. Elle n'appelle le moteur que par [`engine`].
-
 mod engine;
 mod message;
 mod renderer;
@@ -15,7 +13,6 @@ use message::{Job, Message, Screen};
 use screens::{connect, install, scan};
 use state::App;
 
-/// Commandes du catalogue que l'interface déclenche, pour le test de parité.
 #[cfg(test)]
 pub const COMMANDS: &[&str] = &["scan", "host-key", "trust-host-key", "inspect", "install", "version"];
 

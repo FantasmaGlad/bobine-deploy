@@ -1,9 +1,3 @@
-//! Choix du rendu avant l'ouverture de la fenêtre : GPU (Metal, Vulkan, DirectX 12 ou OpenGL selon la plateforme) si
-//! un adaptateur matériel existe, sinon rendu logiciel. Un adaptateur émulé par le processeur (llvmpipe, WARP) démarre
-//! mais plante au premier affichage sans présentation matérielle, trop tard pour qu'iced se replie seul.
-//!
-//! `BOBINE_DEPLOY_RENDERER=gpu|cpu` force le choix.
-
 use wgpu::{Backends, DeviceType, Instance, InstanceDescriptor};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -12,7 +6,6 @@ pub enum Renderer {
     Cpu { reason: &'static str },
 }
 
-/// Sonde les adaptateurs puis fixe `ICED_BACKEND` pour qu'iced suive ce choix.
 pub fn select() -> Renderer {
     let renderer = decide(
         std::env::var("BOBINE_DEPLOY_RENDERER").ok().as_deref(),
@@ -28,8 +21,6 @@ pub fn select() -> Renderer {
     renderer
 }
 
-/// Le GPU a échoué à l'affichage (adaptateur présent mais sans présentation : serveur X virtuel, certains bureaux à
-/// distance). winit ne recrée pas de boucle d'événements dans un même processus : relance en rendu logiciel.
 pub fn relaunch_on_cpu() -> i32 {
     eprintln!("bobine-deploy : le rendu GPU a échoué, relance en rendu logiciel");
     let Ok(exe) = std::env::current_exe() else { return 1 };

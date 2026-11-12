@@ -1,3 +1,2 @@
-# Version de Bobine dont install.sh est embarqué (vendor/install.sh). Mise à jour : scripts/sync-install-sh.py --tag <tag>.
 tag = "V5.1.1"
 install_sh_sha256 = "ada344828f4375f56ced5303a48b098565ecf144108869f0ebca6cbfccd2bde4"

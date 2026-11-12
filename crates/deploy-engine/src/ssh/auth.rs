@@ -1,6 +1,3 @@
-//! Authentification : clé choisie, mot de passe, clavier interactif, puis agent et clés de `~/.ssh` seulement avec
-//! l'accord de l'utilisateur. Une machine ne reçoit jamais d'office toutes les identités du poste.
-
 use std::sync::Arc;
 
 use bobine_deploy_proto::{Credentials, Error};
@@ -11,10 +8,6 @@ use russh::{MethodKind, MethodSet};
 use super::{home_dir, transport, Session};
 
 impl Session {
-    /// Authentifie la session, dans l'ordre : clé choisie explicitement (avec le mot de passe comme phrase de passe
-    /// si elle est chiffrée), mot de passe, clavier interactif (PAM), puis, seulement avec l'accord de l'utilisateur
-    /// (`local_keys`), l'agent SSH et les clés usuelles de `~/.ssh`. Une machine ne reçoit jamais d'office toutes les
-    /// identités du poste.
     pub async fn authenticate(&mut self, creds: &Credentials) -> Result<(), Error> {
         let user = creds.username.trim().to_string();
         if user.is_empty() {
@@ -56,7 +49,6 @@ impl Session {
             if let Some(dir) = home_dir().map(|home| home.join(".ssh")) {
                 for name in ["id_ed25519", "id_ecdsa", "id_rsa"] {
                     let path = dir.join(name);
-                    // Une clé chiffrée sans phrase de passe connue est ignorée : elle n'est pas le choix explicite.
                     if let Ok(key) = russh::keys::load_secret_key(&path, None) {
                         if self.try_private_key(&user, key, &mut methods).await? {
                             return Ok(());
@@ -99,7 +91,6 @@ impl Session {
             .authenticate_keyboard_interactive_start(user.to_string(), None::<String>)
             .await
             .map_err(transport)?;
-        // Quelques tours au plus : chaque invite reçoit le mot de passe (PAM classique : une seule invite).
         for _ in 0..4 {
             match response {
                 KeyboardInteractiveAuthResponse::Success => return Ok(true),

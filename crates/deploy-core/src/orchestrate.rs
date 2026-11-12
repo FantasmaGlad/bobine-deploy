@@ -1,37 +1,14 @@
-//! Construit la commande shell exécutée sur la cible (via SSH) pour dérouler
-//! `install.sh`.
-//!
-//! Deux stratégies d'élévation :
-//! - [`Elevation::Sudo`] : l'utilisateur SSH est déjà sudoer → `sudo install.sh …`.
-//! - [`Elevation::SuRoot`] : machine sans `sudo` / non-sudoer → root direct via
-//!   `su - -c "install.sh --as-user <login> …"` (option B, ne modifie pas la
-//!   politique sudo de la machine).
-//!
-//! La commande produite ne contient **jamais** de mot de passe : le secret
-//! (mot de passe utilisateur pour `sudo`, ou root pour `su`) est fourni
-//! séparément par l'IHM via l'entrée du PTY SSH.
-
-/// Options mappées sur les drapeaux d'`install.sh`.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct InstallOptions {
     pub no_kiosk: bool,
     pub skip_packages: bool,
     pub skip_build: bool,
     pub dry_run: bool,
-    /// Émet la sortie machine `--progress=json` (l'assistant en a besoin pour
-    /// la barre de progression). Laissé configurable pour les tests.
     pub progress_json: bool,
-    /// Canal de mise à jour transmis à `install.sh --channel=<...>` — vide (valeur par défaut dérivée) n'émet
-    /// aucun drapeau et laisse install.sh appliquer son propre défaut
-    /// ("stable"/dernier choix persisté). `assistant_default()` le fixe
-    /// explicitement à "stable" pour que la commande envoyée soit toujours
-    /// sans ambiguïté depuis l'assistant graphique.
     pub channel: String,
 }
 
 impl InstallOptions {
-    /// Réglage par défaut de l'assistant : non-interactif (`-y`) + sortie JSON
-    /// + canal Stable explicite.
     pub fn assistant_default() -> Self {
         InstallOptions {
             progress_json: true,
@@ -40,8 +17,6 @@ impl InstallOptions {
         }
     }
 
-    /// Arguments passés à `install.sh`, hors `--as-user` (injecté par
-    /// l'élévation `SuRoot`). Toujours non-interactif (`-y`).
     pub fn to_args(&self) -> Vec<String> {
         let mut args = vec!["-y".to_string()];
         if self.progress_json {
@@ -66,18 +41,12 @@ impl InstallOptions {
     }
 }
 
-/// Stratégie d'élévation de privilèges retenue pour la cible.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Elevation {
-    /// L'utilisateur SSH est sudoer : `sudo <script> <args>`.
     Sudo,
-    /// Root direct via `su -`, en fournissant le compte cible à `install.sh`
-    /// (`--as-user <login>`), pour une machine sans `sudo`.
     SuRoot { as_user: String },
 }
 
-/// Vrai si le jeton n'a pas besoin d'être protégé pour le shell (jeu de
-/// caractères sûr courant : options, chemins, `=`, `:`, `,`).
 fn is_shell_safe(token: &str) -> bool {
     !token.is_empty()
         && token.chars().all(|c| {
@@ -85,8 +54,6 @@ fn is_shell_safe(token: &str) -> bool {
         })
 }
 
-/// Protège une chaîne en guillemets simples POSIX (`'…'`), en gérant le `'`
-/// interne via la séquence `'\''`.
 pub fn shell_single_quote(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 2);
     out.push('\'');
@@ -101,7 +68,6 @@ pub fn shell_single_quote(s: &str) -> String {
     out
 }
 
-/// Protège un jeton seulement s'il en a besoin (sinon le laisse lisible).
 pub fn shell_quote(token: &str) -> String {
     if is_shell_safe(token) {
         token.to_string()
@@ -110,17 +76,10 @@ pub fn shell_quote(token: &str) -> String {
     }
 }
 
-/// Construit la commande shell à exécuter sur la cible via SSH.
-///
-/// `script_path` est le chemin absolu d'`install.sh` sur la cible.
 pub fn build_remote_command(script_path: &str, opts: &InstallOptions, elev: &Elevation) -> String {
     build_command(None, script_path, opts, elev)
 }
 
-/// Variante qui passe le script à un interpréteur explicite (`bash <script>`)
-/// au lieu de l'exécuter directement : indispensable pour un script téléversé
-/// dans `/tmp`, souvent monté `noexec` sur un système durci (le bit exécutable
-/// n'y suffit alors pas).
 pub fn build_remote_command_via(
     interpreter: &str,
     script_path: &str,
@@ -142,7 +101,6 @@ fn build_command(interpreter: Option<&str>, script_path: &str, opts: &InstallOpt
             parts.join(" ")
         }
         Elevation::SuRoot { as_user } => {
-            // Commande interne exécutée en root : script + --as-user <login> + args.
             let mut inner = Vec::new();
             if let Some(i) = interpreter {
                 inner.push(shell_quote(i));
@@ -152,7 +110,6 @@ fn build_command(interpreter: Option<&str>, script_path: &str, opts: &InstallOpt
             inner.push(shell_quote(as_user));
             inner.extend(opts.to_args().iter().map(|a| shell_quote(a)));
             let inner_cmd = inner.join(" ");
-            // `su - -c '<inner>'` : login shell root, une seule commande protégée.
             format!("su - -c {}", shell_single_quote(&inner_cmd))
         }
     }
@@ -236,7 +193,6 @@ mod tests {
 
     #[test]
     fn single_quote_in_token_is_escaped() {
-        // Chemin contenant une apostrophe : séquence '\'' attendue.
         assert_eq!(shell_single_quote("a'b"), r#"'a'\''b'"#);
     }
 
@@ -253,8 +209,6 @@ mod tests {
                 as_user: "op er".to_string(),
             },
         );
-        // Le login avec espace est protégé DANS la commande interne, elle-même
-        // protégée par les guillemets externes de `su -c`.
         assert_eq!(
             cmd,
             "su - -c '/opt/bobine/install.sh --as-user '\\''op er'\\'' -y --progress=json --no-kiosk'"

@@ -1,6 +1,3 @@
-//! Moteur SSH contre un vrai serveur OpenSSH (voir `common`). Un seul test par fichier modifie
-//! `BOBINE_SSH_KNOWN_HOSTS` : les scénarios s'enchaînent dans un même test pour ne pas se marcher dessus.
-
 mod common;
 
 use bobine_deploy_engine::ssh::{self, Session};
@@ -27,7 +24,6 @@ async fn host_key_trust_authentication_exec_and_upload() {
     std::env::set_var("BOBINE_SSH_KNOWN_HOSTS", &server.known_hosts);
     let creds = credentials(&server);
 
-    // Machine inconnue : aucun secret n'est envoyé, l'empreinte est celle d'OpenSSH.
     let session = Session::connect("127.0.0.1", server.port).await.unwrap();
     let info = session.host_key_info().unwrap();
     assert_eq!(info.status, HostKeyStatus::Unknown);
@@ -40,7 +36,6 @@ async fn host_key_trust_authentication_exec_and_upload() {
     assert_eq!(refused.kind, ErrorKind::Refused);
     assert!(refused.message.contains(&info.fingerprint));
 
-    // Une autre empreinte n'enregistre rien ; la bonne, si.
     assert_eq!(
         session.trust_host_key("SHA256:faux").unwrap_err().kind,
         ErrorKind::Refused
@@ -52,7 +47,6 @@ async fn host_key_trust_authentication_exec_and_upload() {
     );
     session.close().await;
 
-    // Clé connue : authentification par clé, commande, téléversement.
     let session = ssh::open(&creds).await.unwrap();
     let (output, code) = session.exec("printf 'bonjour'; exit 3").await.unwrap();
     assert_eq!((output.as_str(), code), ("bonjour", Some(3)));
@@ -70,12 +64,10 @@ async fn host_key_trust_authentication_exec_and_upload() {
     }
     session.close().await;
 
-    // Mauvaise clé d'utilisateur : refus explicite, sans mot de passe à proposer.
     let mut wrong = creds.clone();
     wrong.key_path = Some(server.dir.join("host_ed25519").display().to_string());
     assert_eq!(ssh::open(&wrong).await.err().unwrap().kind, ErrorKind::Refused);
 
-    // Clé d'hôte changée (réinstallation ou usurpation) : toujours refusée, jamais remplacée.
     let other = server.dir.join("autre");
     std::process::Command::new("ssh-keygen")
         .args(["-q", "-t", "ed25519", "-N", "", "-f"])

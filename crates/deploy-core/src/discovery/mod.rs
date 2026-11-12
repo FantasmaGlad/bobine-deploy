@@ -1,6 +1,3 @@
-//! Arithmétique de découverte réseau, sans entrée ni sortie : réseaux à sonder, tables de voisinage, indice de
-//! système d'un appareil trouvé. Les sondes elles-mêmes vivent dans le moteur.
-
 mod neighbours;
 mod os_hint;
 mod subnet;

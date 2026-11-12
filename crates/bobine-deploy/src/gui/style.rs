@@ -1,5 +1,3 @@
-//! Mise en page commune : marges, titres, cartes et messages.
-
 use iced::widget::{column, container, text, Column};
 use iced::{Element, Length};
 

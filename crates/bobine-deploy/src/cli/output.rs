@@ -1,5 +1,3 @@
-//! Affichage : JSON sur stdout avec `--json`, sinon texte lisible ; progression et journal sur stderr.
-
 use std::io::Write;
 
 use bobine_deploy_engine::Sink;
@@ -8,7 +6,6 @@ use serde_json::json;
 
 use crate::text::printable;
 
-/// Événements sur la console : JSON lignes sur stdout avec `--json`, sinon journal et progression lisibles sur stderr.
 pub struct Console {
     pub json: bool,
 }

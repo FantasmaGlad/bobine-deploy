@@ -1,6 +1,3 @@
-//! Identifiants : jamais en argument (visibles dans la liste des processus), mais par variable d'environnement
-//! (`BOBINE_SSH_PASSWORD`, `BOBINE_ROOT_PASSWORD`) ou une ligne de l'entrée standard.
-
 use std::io::BufRead;
 
 use bobine_deploy_proto::{Credentials, Error};

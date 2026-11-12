@@ -1,5 +1,3 @@
-//! `scan` : machines du réseau local, ou d'un réseau donné.
-
 use bobine_deploy_proto::{Error, Output, ScanRequest};
 
 use crate::{discovery, Sink};

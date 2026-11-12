@@ -1,5 +1,3 @@
-//! Réseaux à sonder : ceux des interfaces actives du poste, ou celui saisi par l'utilisateur.
-
 use std::collections::HashSet;
 use std::net::{IpAddr, Ipv4Addr};
 
@@ -9,7 +7,6 @@ use bobine_deploy_core::discovery::{
 use bobine_deploy_proto::Error;
 
 pub struct ScanPlan {
-    /// IP du poste, préfixe, libellé affiché (`192.168.1.0/24 (wlp3s0)`).
     pub networks: Vec<(Ipv4Addr, u8, String)>,
     pub local_ips: HashSet<Ipv4Addr>,
 }
@@ -33,7 +30,6 @@ impl ScanPlan {
         Ok(plan)
     }
 
-    /// Adresses à sonder, sans doublons entre interfaces ni adresses du poste, triées.
     pub fn candidates(&self) -> Vec<Ipv4Addr> {
         let mut seen = HashSet::new();
         let mut hosts: Vec<Ipv4Addr> = self
@@ -51,8 +47,6 @@ impl ScanPlan {
     }
 }
 
-/// Réseaux physiques d'abord, tunnels seulement s'il n'y a rien d'autre ; jamais les interfaces de conteneurs ou de
-/// machines virtuelles. Le préfixe vient du vrai masque : sur un /22, la borne peut être hors du /24 du poste.
 fn from_interfaces() -> ScanPlan {
     let mut primary = Vec::new();
     let mut tunnels = Vec::new();
@@ -91,7 +85,6 @@ fn network_of(ip: Ipv4Addr, prefix: u8) -> Ipv4Addr {
     Ipv4Addr::from(u32::from(ip) & mask)
 }
 
-/// IP de la route par défaut, par une socket UDP connectée : aucun paquet n'est émis.
 fn default_route_ip() -> Option<Ipv4Addr> {
     let socket = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
     socket.connect("1.1.1.1:80").ok()?;

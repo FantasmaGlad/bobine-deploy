@@ -1,5 +1,3 @@
-# Scripts lancés sur des cibles Linux : fins de ligne LF, quel que soit le système qui récupère le dépôt.
 *.sh text eol=lf
-# Embarqué tel quel et vérifié par son empreinte SHA-256 : aucun octet modifié.
 vendor/install.sh -text
 keys/*.asc -text

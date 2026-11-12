@@ -1,5 +1,3 @@
-//! Connexion : clé d'hôte vérifiée avant tout mot de passe, puis audit de la cible.
-
 use bobine_deploy_proto::{
     Command, Error, HostKeyInfo, HostKeyRequest, HostKeyStatus, Inspection, Output, TrustHostKeyRequest,
 };

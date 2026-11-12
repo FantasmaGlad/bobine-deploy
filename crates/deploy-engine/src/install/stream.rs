@@ -1,5 +1,3 @@
-//! Lecture du terminal d'installation : invite du mot de passe root, lignes de progression et de journal.
-
 use std::time::{Duration, Instant};
 
 use bobine_deploy_core::progress::ProgressState;
@@ -11,13 +9,9 @@ use super::progress::{redact, relay};
 use crate::ssh::Session;
 use crate::Sink;
 
-/// Délai pour voir l'invite de `su -` : au-delà, le mot de passe ne peut pas être transmis.
 const PROMPT_DEADLINE: Duration = Duration::from_secs(20);
-/// Une cible qui n'envoie jamais de saut de ligne ne doit pas faire croître la mémoire sans fin.
 const MAX_PENDING_BYTES: usize = 1 << 20;
 
-/// Exécute la commande sur un terminal, transmet le mot de passe root à l'invite de `su -`, puis relaie chaque ligne
-/// (événement de progression ou journal). Rend l'état final et le code de sortie.
 pub async fn stream(
     session: &Session,
     command: &str,
@@ -55,7 +49,6 @@ pub async fn stream(
                         "[ATTENTION] Sortie distante sans fin de ligne ignorée".to_string(),
                     ));
                 }
-                // L'invite n'est jamais suivie d'un saut de ligne : elle se lit sur le tampon brut.
                 if !password_sent {
                     let lower = String::from_utf8_lossy(&pending).to_lowercase();
                     if lower.contains("password") || lower.contains("mot de passe") {

@@ -1,9 +1,5 @@
 name: CI
 
-# Pull request: checks, then the Linux x64 package is built, installed and started (unless only documentation
-# changed); the five other platforms only when the change touches packaging, dependencies or the workflow.
-# Push to main: checks only. Tag vX.Y.Z (equal to VERSION) or manual run: every platform, then a signed GitHub
-# release for a tag.
 on:
   pull_request:
   push:
@@ -46,22 +42,17 @@ jobs:
             push:*) printf 'packages=false\ninstaller=false\nplatforms=[%s]\n' "$linux" >> "$GITHUB_OUTPUT"; exit 0 ;;
           esac
           changed=$(git diff --name-only "$BASE" HEAD)
-          # macOS et Windows coûtent dix fois Linux : ils ne tournent en pull request que si la modification peut
-          # changer un paquet autrement que par le code commun, déjà compilé et testé sous Linux.
           if grep -vE '^(scripts/winget/|\.github/workflows/winget\.yml$)' <<<"$changed" \
              | grep -qE '^(\.github/|packaging/|scripts/|vendor/|Cargo\.(toml|lock)$|crates/[^/]+/(Cargo\.toml|build\.rs)$|rust-toolchain\.toml$|bobine-release\.toml$|VERSION$)'; then
             echo "platforms=[$linux,$others]" >> "$GITHUB_OUTPUT"
           else
             echo "platforms=[$linux]" >> "$GITHUB_OUTPUT"
           fi
-          # Documentation, licence, modèles de tickets et manifestes winget ne changent aucun paquet.
           if grep -qvE '(\.md$|^LICENSE$|^docs/|^\.github/ISSUE_TEMPLATE/|^scripts/winget/|^\.github/workflows/winget\.yml$)' <<<"$changed"; then
             echo "packages=true" >> "$GITHUB_OUTPUT"
           else
             echo "packages=false" >> "$GITHUB_OUTPUT"
           fi
-          # L'empreinte épinglée est vérifiée à chaque compilation ; la comparaison à la release signée de Bobine, qui
-          # dépend du réseau, seulement quand l'un ou l'autre change (et à chaque tag, avant publication).
           if grep -qE '^(vendor/install\.sh|bobine-release\.toml)$' <<<"$changed"; then
             echo "installer=true" >> "$GITHUB_OUTPUT"
           else
@@ -80,7 +71,6 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      # OpenSSH server for the SSH engine integration tests (a throwaway sshd started by the tests themselves).
       - name: System dependencies
         run: |
           sudo apt-get $APT_OPTIONS update
@@ -146,7 +136,6 @@ jobs:
       - name: Build packages
         shell: bash
         env:
-          # Release only: the .rpm is OpenPGP-signed for DNF. Imported into a throwaway GNUPGHOME, removed at the end.
           RELEASE_GPG_PRIVATE_KEY: ${{ runner.os == 'Linux' && startsWith(github.ref, 'refs/tags/v') && secrets.RELEASE_GPG_PRIVATE_KEY || '' }}
           GNUPGHOME: ${{ runner.temp }}/signing
         run: |
@@ -172,7 +161,6 @@ jobs:
           bdp --json version | grep -q '"version"'
           set +e; bobine-deploy install --host 203.0.113.10 --user test; rc=$?; set -e
           [ "$rc" -eq 2 ] || { echo "install without --yes: exit $rc, 2 expected" >&2; exit 1; }
-          # Still alive after 10 s: timeout kills it (124); a crash at startup returns another code.
           set +e; xvfb-run -a timeout 10 bobine-deploy; rc=$?; set -e
           [ "$rc" -eq 124 ] || { echo "the application stopped at startup (exit $rc)" >&2; exit 1; }
           sudo apt-get $APT_OPTIONS remove -y bobine-deploy
@@ -232,7 +220,6 @@ jobs:
     needs: [changes, checks, packages]
     runs-on: ubuntu-24.04
     steps:
-      # Paquets ignorés seulement quand le tri l'a décidé (documentation seule, ou poussée sur main).
       - run: |
           [ "${{ needs.changes.result }}" = success ] && [ "${{ needs.checks.result }}" = success ] || exit 1
           case "${{ needs.changes.outputs.packages }}:${{ needs.packages.result }}" in

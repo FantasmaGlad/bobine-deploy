@@ -1,18 +1,11 @@
-//! Erreur d'une commande et sa cause.
-
 use serde::{Deserialize, Serialize};
 
-/// Cause d'un échec : elle donne le code de sortie de la ligne de commande et le code d'erreur JSON-RPC.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ErrorKind {
-    /// Nom introuvable, connexion refusée ou expirée, port sans serveur SSH.
     Unreachable,
-    /// Le serveur SSH répond mais refuse la clé d'hôte ou l'authentification.
     Refused,
-    /// Demande incomplète ou contradictoire : rien n'a été tenté.
     Usage,
-    /// Tout le reste.
     Failed,
 }
 

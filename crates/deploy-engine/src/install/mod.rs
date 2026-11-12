@@ -1,7 +1,3 @@
-//! Installation de Bobine : téléverse l'`install.sh` embarqué (release signée de Bobine, épinglée dans
-//! `bobine-release.toml`), le lance avec l'élévation choisie et traduit sa sortie `--progress=json` en événements.
-//! `install.sh` reste la seule source de vérité de l'installation.
-
 pub(crate) mod elevation;
 mod progress;
 mod replay;
@@ -20,7 +16,6 @@ use crate::Sink;
 #[doc(hidden)]
 pub use stream::stream;
 
-/// `install.sh` de la release de Bobine épinglée, vérifié à la compilation (`build.rs`).
 pub const EMBEDDED_INSTALL_SH: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../vendor/install.sh"));
 
 pub async fn install(request: &InstallRequest, sink: &dyn Sink) -> Result<InstallOutcome, Error> {
@@ -70,7 +65,6 @@ async fn run(session: &Session, request: &InstallRequest, sink: &dyn Sink) -> Re
         channel: request.channel.as_str().to_string(),
         ..Default::default()
     };
-    // /tmp peut être monté noexec : le script téléversé passe par bash.
     let command = if uploaded {
         build_remote_command_via("bash", &script, &options, &core_elevation)
     } else {
@@ -84,8 +78,6 @@ async fn run(session: &Session, request: &InstallRequest, sink: &dyn Sink) -> Re
         let _ = session.exec(&format!("rm -f {}", shell_quote(&script))).await;
     }
     let (state, exit_code) = outcome?;
-    // Le code de sortie fait foi : un `run_end` de succès ne masque pas un échec réel (script tué, sudo refusé,
-    // sortie falsifiée par la cible), et un `run_end` absent est aussi un échec.
     match exit_code {
         Some(0) => {}
         code => {

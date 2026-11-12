@@ -1,5 +1,3 @@
-//! `trust-host-key` : enregistre la clé d'hôte si son empreinte est celle confirmée par l'utilisateur.
-
 use bobine_deploy_proto::{Error, Output, TrustHostKeyRequest};
 
 use crate::ssh::Session;

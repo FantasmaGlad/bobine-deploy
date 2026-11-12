@@ -1,54 +1,28 @@
-//! Parse le flux machine de `install.sh --progress=json`.
-//!
-//! Contrat : `install.sh`
-//! émet une **ligne JSON compacte par évènement**, versionnée par la clé de
-//! tête `"bobine":1`. Les autres lignes du flux sont du journal humain, à
-//! afficher tel quel. On distingue donc trois natures de ligne
-//! ([`LineKind`]) : évènement reconnu, ligne marquée mais illisible, ou simple
-//! journal.
-//!
-//! Les évènements ([`Event`]) : `run_begin`, `step` (deux par étape :
-//! `start` puis `ok`/`skip`/`error`), `run_end`. On les rejoue dans un
-//! [`ProgressState`] qui expose directement ce dont l'IHM a besoin : un
-//! pourcentage monotone, l'étape courante, la phase, et l'éventuelle erreur.
-
 use serde::{Deserialize, Serialize};
 
-/// Mode d'installation annoncé par `run_begin`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Mode {
-    /// Installation complète avec kiosk Chromium (borne écran câblé).
     Kiosk,
-    /// Backend seul (`--no-kiosk`), poste de dev ou serveur distinct.
     Server,
 }
 
-/// Statut d'un évènement `step`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum StepStatus {
-    /// L'étape démarre.
     Start,
-    /// L'étape s'est terminée avec succès.
     Ok,
-    /// L'étape a été ignorée (drapeau `--skip-*`, `--no-kiosk`…).
     Skip,
-    /// L'étape a échoué (émis par le trap `on_error`).
     Error,
 }
 
-/// Statut d'un évènement `run_end`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RunStatus {
-    /// Installation terminée avec succès.
     Ok,
-    /// Installation interrompue par une erreur.
     Error,
 }
 
-/// Métadonnées d'ouverture d'une exécution (`run_begin`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RunBegin {
     #[serde(default)]
@@ -65,52 +39,38 @@ pub struct RunBegin {
     pub dry_run: bool,
 }
 
-/// Évènement d'étape (`step`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StepEvent {
     pub status: StepStatus,
-    /// Numéro d'étape (1-indexé).
     pub step: u32,
     pub total: u32,
-    /// Avancement 0..=100. Monotone : le `start` d'une étape vaut le `pct` de
-    /// clôture de la précédente.
     pub pct: u8,
-    /// Identifiant **stable** de l'étape (`packages`, `kiosk`, …) : mapper les
-    /// icônes / i18n dessus, jamais sur `title` (prose FR mouvante).
     pub slug: String,
-    /// Libellé humain courant.
     pub title: String,
-    /// Détail optionnel : raison d'un `skip`, code d'un `error`.
     #[serde(default)]
     pub detail: Option<String>,
 }
 
-/// Évènement de clôture d'exécution (`run_end`). Les champs varient selon le
-/// statut (succès vs erreur), d'où leur caractère optionnel.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RunEnd {
     pub status: RunStatus,
     #[serde(default)]
     pub pct: Option<u8>,
     pub total: u32,
-    /// Résultat du contrôle `/api/health` (succès uniquement).
     #[serde(default)]
     pub healthy: Option<bool>,
     #[serde(default)]
     pub url: Option<String>,
     #[serde(default)]
     pub port: Option<u16>,
-    /// Code de retour (erreur uniquement).
     #[serde(default)]
     pub rc: Option<i32>,
-    /// Étape en cours au moment de l'échec (erreur uniquement).
     #[serde(default)]
     pub step: Option<u32>,
     #[serde(default)]
     pub dry_run: Option<bool>,
 }
 
-/// Un évènement de progression, discriminé par la clé `event`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "event", rename_all = "snake_case")]
 pub enum Event {
@@ -119,25 +79,17 @@ pub enum Event {
     RunEnd(RunEnd),
 }
 
-/// Nature d'une ligne du flux mêlé (évènements JSON + journal humain).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LineKind {
-    /// Évènement machine reconnu et parsé.
     Event(Event),
-    /// Ligne marquée `"bobine":` mais illisible (schéma cassé) — à signaler.
     Malformed(String),
-    /// Ligne de journal humain ordinaire — à afficher telle quelle.
     Log,
 }
 
-/// Vrai si la ligne porte le marqueur d'évènement de tête `{"bobine":`.
-///
-/// Le marqueur en tête permet un filtrage fiable sans parser tout le flux.
 pub fn is_event_marker(line: &str) -> bool {
     line.trim_start().starts_with("{\"bobine\":")
 }
 
-/// Classe une ligne du flux : évènement, ligne marquée illisible, ou journal.
 pub fn classify_line(line: &str) -> LineKind {
     let trimmed = line.trim();
     if is_event_marker(trimmed) {
@@ -150,20 +102,14 @@ pub fn classify_line(line: &str) -> LineKind {
     }
 }
 
-/// Phase globale de l'installation, dérivée du flux d'évènements.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Phase {
-    /// Aucun `run_begin`/`step` reçu encore.
     NotStarted,
-    /// Installation en cours.
     Running,
-    /// `run_end` reçu avec succès.
     Succeeded,
-    /// `step:error` ou `run_end:error` reçu.
     Failed,
 }
 
-/// Référence légère à une étape (pour l'affichage courant / l'erreur).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StepRef {
     pub index: u32,
@@ -181,26 +127,15 @@ impl StepRef {
     }
 }
 
-/// État de progression prêt à afficher, reconstruit en rejouant les évènements.
-///
-/// L'IHM lie typiquement [`ProgressState::pct`] à la barre et
-/// [`ProgressState::current`] au libellé courant.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProgressState {
     pub phase: Phase,
-    /// Nombre total d'étapes (connu dès `run_begin`).
     pub total: u32,
-    /// Avancement courant 0..=100.
     pub pct: u8,
-    /// Étape en cours (ou dernière étape close).
     pub current: Option<StepRef>,
-    /// Nombre d'étapes closes (`ok` ou `skip`).
     pub completed: u32,
-    /// Étape ayant échoué, le cas échéant.
     pub failure: Option<StepRef>,
-    /// Métadonnées d'ouverture (`run_begin`).
     pub run: Option<RunBegin>,
-    /// Clôture (`run_end`), une fois reçue.
     pub end: Option<RunEnd>,
 }
 
@@ -220,12 +155,10 @@ impl Default for ProgressState {
 }
 
 impl ProgressState {
-    /// État initial, avant tout évènement.
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Applique un évènement déjà parsé.
     pub fn apply(&mut self, ev: &Event) {
         match ev {
             Event::RunBegin(rb) => {
@@ -274,8 +207,6 @@ impl ProgressState {
         }
     }
 
-    /// Classe une ligne brute du flux et, si c'est un évènement, l'applique.
-    /// Retourne la nature de la ligne pour que l'appelant route le journal.
     pub fn feed_line(&mut self, line: &str) -> LineKind {
         let kind = classify_line(line);
         if let LineKind::Event(ev) = &kind {
@@ -295,7 +226,7 @@ mod tests {
         match classify_line(line) {
             LineKind::Event(Event::RunBegin(rb)) => {
                 assert_eq!(rb.total, 15);
-                assert_eq!(rb.user, "fa\"n\\ta"); // \" -> " et \\ -> \
+                assert_eq!(rb.user, "fa\"n\\ta");
                 assert_eq!(rb.repo, "/home/fa nta/Bob\"ine");
                 assert_eq!(rb.mode, Mode::Kiosk);
                 assert!(!rb.dry_run);
@@ -321,13 +252,11 @@ mod tests {
     fn non_event_line_is_log() {
         assert_eq!(classify_line("  ┃ [1/15] Paquets système (apt)"), LineKind::Log);
         assert_eq!(classify_line("ok redis-server actif"), LineKind::Log);
-        // Un objet JSON qui n'est pas un évènement bobine reste du journal.
         assert_eq!(classify_line(r#"{"autre":true}"#), LineKind::Log);
     }
 
     #[test]
     fn marked_but_broken_line_is_malformed() {
-        // Marqueur présent mais JSON tronqué.
         match classify_line(r#"{"bobine":1,"event":"step","status":"#) {
             LineKind::Malformed(_) => {}
             other => panic!("attendu Malformed, obtenu {other:?}"),

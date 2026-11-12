@@ -21,17 +21,13 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std", "io-
 serde_json = "1"
 zeroize = "1"
 iced = { version = "0.14", default-features = false, features = ["wgpu", "tiny-skia", "crisp", "x11", "wayland", "tokio", "image-without-codecs"] }
-# Même version que celle d'iced : la sonde du rendu (gui/renderer.rs) partage son wgpu.
 wgpu = "27"
-# Seul le PNG sert (icônes) : pas d'autres codecs.
 image = { version = "0.25", default-features = false, features = ["png"] }
 rfd = { version = "0.18", default-features = false, features = ["xdg-portal"] }
 
 [target."cfg(windows)".dependencies]
 windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
 
-# Paquets Linux : `cargo deb` et `cargo generate-rpm` (scripts/bundle.py). Les bibliothèques d'affichage sont chargées
-# à l'exécution : recommandées et non exigées, pour qu'un serveur sans écran installe la ligne de commande seule.
 [package.metadata.deb]
 name = "bobine-deploy"
 maintainer = "FantasmaGlad <security@bobine.fit>"
@@ -44,7 +40,6 @@ depends = "$auto"
 recommends = "libxkbcommon0, libxkbcommon-x11-0, libwayland-client0, libx11-6, libxcursor1, libxi6, libxrandr2"
 conflicts = "bobine-assistant"
 replaces = "bobine-assistant"
-# Alias `bdp` : lien créé et retiré par les scripts du paquet.
 maintainer-scripts = "../../packaging/linux/debian/"
 assets = [
     ["target/release/bobine-deploy", "usr/bin/", "755"],
