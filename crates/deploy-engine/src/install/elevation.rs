@@ -1,11 +1,8 @@
-//! Élévation déterminée comme l'audit : `sudo` si l'utilisateur peut s'en servir sans mot de passe, sinon `su -`.
-
 use bobine_deploy_core::privilege::{decide, PrivilegeDecision, SudoProbe};
 use bobine_deploy_proto::{Elevation, Error};
 
 use crate::ssh::Session;
 
-/// Ce que l'utilisateur SSH peut faire avec `sudo` ; partagé par l'audit et l'installation.
 pub async fn sudo_probe(session: &Session) -> Result<SudoProbe, Error> {
     let yes = |out: String| out.trim() == "yes";
     let sudo_installed = yes(session

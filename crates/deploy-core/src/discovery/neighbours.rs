@@ -1,17 +1,9 @@
-//! Tables de voisinage ARP (Linux, macOS, Windows) : appareils qui ont répondu, même ports filtrés.
-
 use std::net::Ipv4Addr;
 
-/// Entrées de la table de voisinage ARP du noyau : IP -> adresse MAC.
-///
-/// Intérêt : l'ARP est résolu par le NOYAU avant tout paquet TCP, donc un
-/// appareil dont TOUS les ports sont filtrés (pare-feu `drop`) y figure quand
-/// même après la tentative de connexion — aucune sonde de port ne peut le
-/// révéler autrement.
 pub fn parse_proc_net_arp(content: &str) -> Vec<(Ipv4Addr, String)> {
     content
         .lines()
-        .skip(1) // en-tête : IP address / HW type / Flags / HW address …
+        .skip(1)
         .filter_map(|line| {
             let cols: Vec<&str> = line.split_whitespace().collect();
             if cols.len() < 4 {
@@ -20,7 +12,6 @@ pub fn parse_proc_net_arp(content: &str) -> Vec<(Ipv4Addr, String)> {
             let ip = cols[0].parse::<Ipv4Addr>().ok()?;
             let flags = u32::from_str_radix(cols[2].trim_start_matches("0x"), 16).ok()?;
             let mac = cols[3];
-            // 0x2 = entrée complète ; MAC nulle = résolution en échec.
             if flags & 0x2 == 0 || mac == "00:00:00:00:00:00" {
                 return None;
             }
@@ -29,9 +20,6 @@ pub fn parse_proc_net_arp(content: &str) -> Vec<(Ipv4Addr, String)> {
         .collect()
 }
 
-/// Sortie de `arp -a` (macOS : `? (192.168.1.5) at aa:bb:cc:dd:ee:ff on en0 …`,
-/// Windows : `  192.168.1.5   aa-bb-cc-dd-ee-ff   dynamique`). Les entrées
-/// incomplètes (`(incomplete)`) et le broadcast sont ignorés.
 pub fn parse_arp_a(content: &str) -> Vec<(Ipv4Addr, String)> {
     let mut out = Vec::new();
     for line in content.lines() {

@@ -5,12 +5,8 @@ all-features = false
 version = 2
 yanked = "deny"
 ignore = [
-    # Signature RSA à temps non constant (aucune version corrigée) : seulement avec une clé RSA fournie par
-    # l'utilisateur, face à la machine qu'il a choisie.
     { id = "RUSTSEC-2023-0071", reason = "RSA signing only with a user-supplied key, towards the chosen target" },
-    # Analyse des polices de l'interface : aucune police externe n'est chargée.
     { id = "RUSTSEC-2026-0192", reason = "GUI font stack, no untrusted font is ever loaded" },
-    # Macro de compilation du rendu Metal (wgpu sur macOS) : rien ne s'exécute dans le binaire.
     { id = "RUSTSEC-2024-0436", reason = "compile-time macro of the Metal backend, nothing runs in the binary" },
 ]
 

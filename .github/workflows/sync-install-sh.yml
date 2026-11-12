@@ -1,8 +1,5 @@
 name: Synchronisation d'install.sh
 
-# Après chaque Stable de Bobine : récupère install.sh de la release, vérifie sa signature et son empreinte
-# (scripts/sync-install-sh.py), puis ouvre ou met à jour une PR. La CI de la PR est lancée explicitement : une PR créée
-# par le jeton du workflow ne déclenche pas d'elle-même les autres workflows.
 on:
   schedule:
     - cron: "43 6 * * *"

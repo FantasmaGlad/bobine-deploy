@@ -54,7 +54,6 @@ def verified_install_sh(tag: str) -> bytes:
         subprocess.run(gpg + ["--import", str(KEY)], check=True, capture_output=True)
         status = subprocess.run(gpg + ["--verify", str(work / "SHA256SUMS.asc"), str(work / "SHA256SUMS")],
                                 capture_output=True, text=True).stdout
-    # VALIDSIG : empreinte de la clé signataire (sous-clé possible) ... empreinte de la clé principale en dernier.
     if not re.search(rf"^\[GNUPG:\] VALIDSIG .* {FINGERPRINT}$", status, re.M):
         raise SystemExit(f"{tag} : signature de SHA256SUMS invalide ou d'une autre clé")
     expected = next((line.split()[0] for line in sums.decode().splitlines() if line.endswith("  install.sh")), None)

@@ -1,5 +1,3 @@
-//! Installation : options, progression en temps réel, journal copiable.
-
 use bobine_deploy_proto::{Channel, Command, Elevation, Error, Event, InstallPhase, InstallRequest, Output};
 use iced::widget::{button, checkbox, column, progress_bar, radio, row, scrollable, text, text_input};
 use iced::{Element, Length, Task};
@@ -10,7 +8,6 @@ use crate::gui::state::App;
 use crate::gui::style::{self, SPACING};
 use crate::text::printable;
 
-/// Le journal affiché reste borné : une installation bavarde ne doit pas ralentir l'interface.
 const MAX_LOG_LINES: usize = 2000;
 
 pub fn start(app: &mut App, simulate: bool) -> Task<Message> {

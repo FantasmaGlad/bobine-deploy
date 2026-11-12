@@ -1,5 +1,3 @@
-//! Connexion TCP et négociation SSH, sans authentification.
-
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -13,11 +11,9 @@ use super::{Recorder, Session};
 
 const TCP_TIMEOUT: Duration = Duration::from_secs(8);
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(30);
-/// Une installation reste parfois silencieuse plusieurs minutes : sans maintien, une box purge la connexion.
 const KEEPALIVE: Duration = Duration::from_secs(15);
 
 impl Session {
-    /// Connexion TCP (IPv4 d'abord : le scan n'énumère que de l'IPv4) et négociation SSH, sans authentification.
     pub async fn connect(host: &str, port: u16) -> Result<Self, Error> {
         let host = host.trim();
         if host.is_empty() {

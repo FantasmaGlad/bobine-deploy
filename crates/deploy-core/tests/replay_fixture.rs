@@ -1,8 +1,3 @@
-//! Test d'intégration : rejoue un flux `install.sh --progress=json` RÉEL
-//! (capturé depuis le script, `fixtures/install-events.jsonl`) dans le
-//! [`ProgressState`] et vérifie la cohérence de bout en bout. Garde-fou contre
-//! toute divergence future entre l'émetteur (install.sh) et le parseur.
-
 use bobine_deploy_core::progress::{classify_line, Event, LineKind, Mode, Phase, ProgressState, RunStatus, StepStatus};
 
 const STREAM: &str = include_str!("fixtures/install-events.jsonl");
@@ -34,7 +29,6 @@ fn replays_real_install_stream_to_success() {
         }
     }
 
-    // run_begin + 15 start + 15 close + run_end = 32.
     assert_eq!(events, 32, "nombre d'évènements");
     assert_eq!(starts, 15, "starts");
     assert_eq!(closes, 15, "closes");
@@ -48,7 +42,6 @@ fn replays_real_install_stream_to_success() {
     let run = state.run.expect("run_begin");
     assert_eq!(run.mode, Mode::Kiosk);
     assert_eq!(run.total, 15);
-    // L'échappement JSON de valeurs piégeuses est correctement décodé.
     assert_eq!(run.user, "fa\"n\\ta");
     assert_eq!(run.repo, "/home/fa nta/Bob\"ine");
 

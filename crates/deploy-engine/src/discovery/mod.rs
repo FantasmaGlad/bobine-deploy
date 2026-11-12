@@ -1,6 +1,3 @@
-//! Balayage du réseau local : tout ce qui répond est listé (routeur, imprimante, téléphones…), les cibles probables en
-//! tête, pour que l'utilisateur reconnaisse sa borne au lieu de croire à un scan incomplet.
-
 mod neighbours;
 mod plan;
 mod probe;
@@ -17,7 +14,6 @@ use tokio::task::JoinSet;
 use crate::Sink;
 use plan::ScanPlan;
 
-/// Au plus environ huit mises à jour par seconde : fluide sans noyer l'interface.
 const PROGRESS_INTERVAL: Duration = Duration::from_millis(120);
 
 pub async fn scan(sink: &dyn Sink, custom_subnet: Option<String>) -> Result<Vec<Device>, Error> {
@@ -71,7 +67,6 @@ async fn probe_all(candidates: &[Ipv4Addr], labels: &[String], sink: &dyn Sink) 
     devices
 }
 
-/// Adresses MAC, et appareils présents dans la table ARP mais invisibles aux sondes (tout filtré).
 fn add_neighbours(devices: &mut Vec<Device>, candidates: &[Ipv4Addr], sink: &dyn Sink) {
     let arp = neighbours::arp_table();
     for device in devices.iter_mut() {
@@ -118,7 +113,6 @@ async fn add_bobine_local(devices: &mut Vec<Device>, sink: &dyn Sink) {
     }
 }
 
-/// Noms d'hôte en parallèle, pour les seuls appareils retenus.
 async fn resolve_names(devices: &mut [Device]) {
     let mut tasks = JoinSet::new();
     for (index, device) in devices.iter().enumerate() {
@@ -133,7 +127,6 @@ async fn resolve_names(devices: &mut [Device]) {
     }
 }
 
-/// Bobine confirmé, puis cible probable, puis SSH ; le reste par adresse (ordre numérique, pas lexical).
 fn sort(devices: &mut [Device]) {
     let ip = |d: &Device| d.ip.parse::<Ipv4Addr>().unwrap_or(Ipv4Addr::UNSPECIFIED).octets();
     devices.sort_by(|a, b| {

@@ -1,5 +1,3 @@
-//! État de l'interface, un bloc par écran. Les mots de passe sont effacés de la mémoire à la fermeture.
-
 use bobine_deploy_proto::{
     AppInfo, Channel, Credentials, Device, HostKeyInfo, Inspection, InstallOutcome, InstallProgress, ScanProgress,
 };
@@ -77,7 +75,6 @@ impl Drop for Form {
     }
 }
 
-/// Clé d'hôte et audit de la cible en cours.
 #[derive(Default)]
 pub struct TargetState {
     pub busy: bool,

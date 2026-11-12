@@ -1,9 +1,3 @@
-//! Ligne de commande : une sous-commande par commande du catalogue, traduite pour le moteur.
-//!
-//! Contrat, comme la commande `bobine` : résultat lisible ou `--json` sur stdout, messages sur stderr, codes de sortie
-//! 0 succès, 1 échec, 2 usage, 3 cible injoignable, 4 clé d'hôte ou authentification refusée.
-
-/// `println!` qui ne panique pas quand la sortie est fermée (`bobine-deploy scan | head`).
 macro_rules! out {
     ($($arg:tt)*) => {{
         let _ = writeln!(std::io::stdout().lock(), $($arg)*);
@@ -31,7 +25,6 @@ pub const EXIT_USAGE: i32 = 2;
 pub const EXIT_UNREACHABLE: i32 = 3;
 pub const EXIT_REFUSED: i32 = 4;
 
-/// Vrai quand les arguments demandent la ligne de commande : une sous-commande du catalogue, ou `--help`/`--version`.
 pub fn is_invocation(args: &[String]) -> bool {
     args.iter().skip(1).any(|a| {
         proto::CATALOG.iter().any(|c| c.name == a) || matches!(a.as_str(), "-h" | "--help" | "-V" | "--version")
@@ -93,8 +86,6 @@ async fn run(cli: Cli) -> Result<(), Error> {
     Ok(())
 }
 
-/// Sous Windows, l'exécutable graphique n'a pas de console : la ligne de commande se rattache à celle du terminal qui
-/// l'a lancée, sinon rien ne s'afficherait.
 pub fn attach_console() {
     #[cfg(windows)]
     unsafe {
@@ -103,7 +94,6 @@ pub fn attach_console() {
     let _ = std::io::stdout().flush();
 }
 
-/// Noms des sous-commandes, pour le test de parité.
 #[cfg(test)]
 pub fn subcommand_names() -> Vec<String> {
     use clap::CommandFactory;

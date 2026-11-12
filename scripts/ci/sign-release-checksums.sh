@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Produit SHA256SUMS et sa signature détachée SHA256SUMS.asc pour les fichiers d'une release, avec la clé de publication de
-# Bobine (déjà importée dans un GNUPGHOME éphémère par le job appelant), puis vérifie le résultat.
 set -euo pipefail
 export LC_ALL=C
 dir="${1:?dossier des assets de la release}"

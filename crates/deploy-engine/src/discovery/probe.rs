@@ -1,5 +1,3 @@
-//! Sondes TCP d'un hôte : ports usuels, bannière SSH, signature d'un backend Bobine.
-
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
@@ -11,12 +9,8 @@ use tokio::net::TcpStream;
 use tokio::sync::Semaphore;
 use tokio::time::timeout;
 
-/// SSH, HTTP(S), partage Windows, Bobine (1903, 8000 avant la 5.1.0), bureau à distance, AirPlay, impression.
 const COMMON_PORTS: [u16; 10] = [22, 80, 443, 445, 1903, 3389, 5000, 7000, 8000, 9100];
-/// Port presque toujours fermé : un refus rapide prouve qu'un hôte existe même sans service ouvert.
 const LIVENESS_PORT: u16 = 9;
-/// Sous la limite de descripteurs d'un processus graphique macOS (256) : au-delà, `connect` échoue et le scan ne
-/// trouverait rien.
 pub const MAX_OPEN_SOCKETS: usize = 96;
 pub const MAX_CONCURRENT_HOSTS: usize = 40;
 const CONNECT_TIMEOUT: Duration = Duration::from_millis(900);
@@ -27,7 +21,6 @@ enum Outcome {
     Silent,
 }
 
-/// `None` si rien n'indique qu'un hôte existe à cette adresse.
 pub async fn probe_host(sockets: Arc<Semaphore>, ip: Ipv4Addr) -> Option<Device> {
     let mut probes = Vec::with_capacity(COMMON_PORTS.len() + 1);
     for port in COMMON_PORTS.into_iter().chain([LIVENESS_PORT]) {
@@ -118,7 +111,6 @@ async fn connect(sockets: &Semaphore, ip: Ipv4Addr, port: u16) -> Outcome {
     }
 }
 
-/// Lecture bornée : un appareil du réseau ne doit pas pouvoir envoyer une ligne sans fin.
 async fn ssh_banner(stream: TcpStream) -> String {
     let mut reader = BufReader::new(stream.take(4096));
     let mut line = String::new();
@@ -128,7 +120,6 @@ async fn ssh_banner(stream: TcpStream) -> String {
     }
 }
 
-/// `/api/health` de Bobine liste ses `components` : un simple port ouvert peut être n'importe quel serveur.
 async fn is_bobine(mut stream: TcpStream) -> bool {
     let request = b"GET /api/health HTTP/1.0\r\nHost: bobine\r\nConnection: close\r\n\r\n";
     if timeout(Duration::from_millis(600), stream.write_all(request))
@@ -137,7 +128,6 @@ async fn is_bobine(mut stream: TcpStream) -> bool {
     {
         return false;
     }
-    // En-têtes et corps peuvent arriver en plusieurs segments : lire jusqu'au marqueur, à la fin ou à 4 Kio.
     let read = async {
         let mut response = Vec::with_capacity(1024);
         let mut chunk = [0u8; 1024];

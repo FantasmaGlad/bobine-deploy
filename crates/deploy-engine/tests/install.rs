@@ -1,6 +1,3 @@
-//! Lecture du terminal d'installation contre un vrai serveur OpenSSH : événements, journal, code de sortie, mot de
-//! passe transmis à l'invite et jamais recopié dans le journal.
-
 mod common;
 
 use std::sync::Mutex;
@@ -40,7 +37,6 @@ async fn terminal_events_logs_exit_code_and_root_password() {
     .await
     .unwrap();
 
-    // Faux installateur : invite de mot de passe sans saut de ligne, lecture du mot de passe, puis le contrat.
     let script = server.dir.join("faux-install.sh");
     std::fs::write(
         &script,
@@ -75,7 +71,6 @@ exit 0
         .iter()
         .any(|e| matches!(e, Event::InstallProgress(p) if p.pct == 100)));
 
-    // Échec du script : le code de sortie remonte.
     let sink = Collect(Mutex::new(Vec::new()));
     let (_, code) = stream(&session, "echo 'panne'; exit 7", None, &sink).await.unwrap();
     assert_eq!(code, Some(7));

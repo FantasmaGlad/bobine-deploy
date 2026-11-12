@@ -1,6 +1,3 @@
-//! SSH en Rust pur (russh) : la clé d'hôte est vérifiée avant tout secret, puis l'authentification suit l'ordre
-//! choisi par l'utilisateur.
-
 mod auth;
 mod channel;
 mod connect;
@@ -14,7 +11,6 @@ use russh::client::{self, Handle};
 use russh::keys::ssh_key::PublicKey;
 use russh::keys::PublicKeyOrCertificate;
 
-/// Session négociée ; utilisable seulement après [`open`] (clé d'hôte connue, authentification réussie).
 pub struct Session {
     handle: Handle<Recorder>,
     host: String,
@@ -22,7 +18,6 @@ pub struct Session {
     host_key: PublicKey,
 }
 
-/// Retient la clé présentée pendant la négociation ; la décision de confiance est prise ensuite, avant tout secret.
 pub(crate) struct Recorder {
     key: Arc<Mutex<Option<PublicKey>>>,
 }
@@ -42,7 +37,6 @@ impl client::Handler for Recorder {
     }
 }
 
-/// Connexion, clé d'hôte déjà connue, puis authentification : la seule porte d'entrée vers une session utilisable.
 pub async fn open(creds: &Credentials) -> Result<Session, Error> {
     let mut session = Session::connect(&creds.host, creds.port).await?;
     session.require_known_host()?;

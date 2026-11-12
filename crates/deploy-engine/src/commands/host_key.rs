@@ -1,5 +1,3 @@
-//! `host-key` : empreinte et statut de la clé d'hôte SSH, sans s'authentifier.
-
 use bobine_deploy_proto::{Error, HostKeyRequest, Output};
 
 use crate::ssh::Session;

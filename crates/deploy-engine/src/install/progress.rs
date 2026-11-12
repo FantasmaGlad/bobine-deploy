@@ -1,5 +1,3 @@
-//! Traduction de la sortie d'`install.sh` en événements et en résultat.
-
 use bobine_deploy_core::progress::{classify_line, LineKind, Phase, ProgressState};
 use bobine_deploy_proto::{Event, InstallOutcome, InstallPhase, InstallProgress};
 
@@ -18,7 +16,6 @@ pub fn relay(line: &str, state: &mut ProgressState, sink: &dyn Sink) {
     }
 }
 
-/// Le mot de passe root ne doit jamais apparaître dans un journal affiché ou copié.
 pub fn redact(line: &str, secret: Option<&str>) -> String {
     match secret {
         Some(secret) if !secret.is_empty() && line.contains(secret) => line.replace(secret, "***"),

@@ -1,10 +1,7 @@
-//! Messages de l'interface.
-
 use std::path::PathBuf;
 
 use bobine_deploy_proto::{Channel, Error, Event, Output};
 
-/// Commande en cours, pour attribuer son résultat.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Job {
     Version,
@@ -27,11 +24,9 @@ pub enum Message {
     Event(Event),
     Finished(Job, Result<Output, Error>),
     Show(Screen),
-    // Recherche
     SubnetChanged(String),
     StartScan,
     SelectDevice(String),
-    // Connexion
     HostChanged(String),
     PortChanged(String),
     UserChanged(String),
@@ -42,7 +37,6 @@ pub enum Message {
     LocalKeysToggled(bool),
     CheckHostKey,
     TrustHostKey,
-    // Installation
     ChannelSelected(Channel),
     KioskToggled(bool),
     SkipPackagesToggled(bool),

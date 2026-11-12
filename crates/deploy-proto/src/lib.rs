@@ -1,9 +1,3 @@
-//! Contrat de Bobine Deploy : une commande décrit une opération, le moteur l'exécute en émettant des événements et rend
-//! un résultat. L'interface graphique, la ligne de commande et l'interface d'automatisation (JSON-RPC sur stdio) ne
-//! font que traduire vers et depuis ces types : aucune logique métier ne vit dans une façade.
-//!
-//! [`CATALOG`] est la liste unique des commandes ; un test de l'application vérifie que chaque façade les expose toutes.
-
 mod error;
 mod event;
 mod output;
@@ -18,19 +12,14 @@ pub use request::{
     default_ssh_port, Channel, Credentials, Elevation, HostKeyRequest, InstallRequest, ScanRequest, TrustHostKeyRequest,
 };
 
-/// Version du contrat, annoncée par `version` et par l'interface d'automatisation. Elle change quand un champ change
-/// de sens ou disparaît ; un champ ajouté (avec valeur par défaut) ne la change pas.
 pub const PROTOCOL_VERSION: u32 = 1;
 
-/// Description d'une commande du catalogue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CommandSpec {
-    /// Nom stable : sous-commande de la ligne de commande et méthode de l'interface d'automatisation.
     pub name: &'static str,
     pub summary: &'static str,
 }
 
-/// Toutes les commandes, dans l'ordre d'un déploiement.
 pub const CATALOG: &[CommandSpec] = &[
     CommandSpec {
         name: "scan",
@@ -58,7 +47,6 @@ pub const CATALOG: &[CommandSpec] = &[
     },
 ];
 
-/// Une opération demandée au moteur.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "kebab-case")]
 pub enum Command {
@@ -71,7 +59,6 @@ pub enum Command {
 }
 
 impl Command {
-    /// Nom du catalogue correspondant.
     pub fn name(&self) -> &'static str {
         match self {
             Self::Scan(_) => "scan",

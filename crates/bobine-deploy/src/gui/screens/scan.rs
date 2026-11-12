@@ -1,5 +1,3 @@
-//! Recherche : tout ce qui répond sur le réseau, les cibles probables en tête.
-
 use bobine_deploy_proto::{Command, Device, Event, Output, ScanRequest};
 use iced::widget::{button, column, progress_bar, row, scrollable, text, text_input};
 use iced::{Element, Length, Task};

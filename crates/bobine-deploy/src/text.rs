@@ -1,7 +1,3 @@
-//! Texte venu du réseau (nom d'hôte, journal de la cible), affiché sans danger.
-
-/// Texte venu du réseau (nom d'hôte, journal de la cible) sans caractères de contrôle ni de direction : il ne peut ni
-/// piloter le terminal (séquences ANSI, OSC) ni réordonner visuellement la ligne (U+202E…).
 pub fn printable(text: &str) -> String {
     text.chars()
         .filter(|c| {

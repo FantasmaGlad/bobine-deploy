@@ -1,6 +1,3 @@
-//! Parité des façades : chaque commande du catalogue existe dans la ligne de commande et l'interface
-//! d'automatisation (et dans l'interface graphique, `gui::COMMANDS`).
-
 #[cfg(test)]
 mod tests {
     use bobine_deploy_proto::CATALOG;

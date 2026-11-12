@@ -1,5 +1,3 @@
-//! `install` : installation de Bobine sur la cible.
-
 use bobine_deploy_proto::{Error, InstallRequest, Output};
 
 use crate::Sink;

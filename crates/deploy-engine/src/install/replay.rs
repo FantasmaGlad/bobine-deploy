@@ -1,5 +1,3 @@
-//! Simulation : rejeu d'une installation réelle enregistrée (fixture du contrat `--progress=json`), sans cible.
-
 use std::time::Duration;
 
 use bobine_deploy_core::progress::{Phase, ProgressState};

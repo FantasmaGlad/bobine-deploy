@@ -1,9 +1,7 @@
-# Espace de travail de Bobine Deploy : contrat, logique pure, moteur et application.
 [workspace]
 resolver = "2"
 members = ["crates/deploy-core", "crates/deploy-proto", "crates/deploy-engine", "crates/bobine-deploy"]
 
-# Rendu de l'interface sur le processeur : optimisé pour la vitesse, la taille n'est pas un critère.
 [profile.release]
 strip = true
 lto = "thin"

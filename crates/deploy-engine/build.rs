@@ -2,8 +2,6 @@ use std::path::Path;
 
 use sha2::{Digest, Sha256};
 
-/// Embarque la version et le commit (`VERSION`, `COMMIT` à la racine du dépôt, `COMMIT` écrit par la CI) et refuse de
-/// compiler si `vendor/install.sh` n'a pas l'empreinte épinglée dans `bobine-release.toml`.
 fn main() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |name: &str, default: &str| {

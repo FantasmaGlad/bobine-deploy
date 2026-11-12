@@ -1,15 +1,3 @@
-//! Interface d'automatisation : JSON-RPC 2.0 sur l'entrée et la sortie standard, un message JSON par ligne. Aucun port
-//! n'est ouvert : seul le processus qui a lancé `bobine-deploy rpc` peut le piloter.
-//!
-//! - Méthodes : les noms du catalogue (`scan`, `host-key`, `trust-host-key`, `inspect`, `install`, `version`), avec
-//!   pour `params` les champs de la commande (ceux de la ligne de commande, en JSON), plus `describe` (catalogue et
-//!   version du contrat).
-//! - Pendant une commande, chaque événement est une notification `event` : `{"id": <id de la requête>, "event": …}`.
-//! - Erreurs : -32700 JSON illisible, -32600 requête invalide, -32601 méthode inconnue, -32602 paramètres invalides
-//!   ou demande incomplète, -32001 cible injoignable, -32002 clé d'hôte ou authentification refusée, -32000 échec.
-//!
-//! Les requêtes s'exécutent en parallèle ; les réponses portent l'`id` de leur requête.
-
 use std::sync::Arc;
 
 use bobine_deploy_engine::{execute, Sink};
@@ -18,11 +6,9 @@ use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::sync::mpsc;
 
-/// Méthodes hors catalogue.
 #[cfg(test)]
 pub const META_METHODS: &[&str] = &["describe"];
 
-/// Toutes les méthodes servies, pour le test de parité.
 #[cfg(test)]
 pub fn methods() -> Vec<String> {
     CATALOG
@@ -59,7 +45,6 @@ pub fn main() -> i32 {
     0
 }
 
-/// Sert les requêtes lues sur `input` jusqu'à sa fin, puis attend les commandes en cours.
 pub async fn serve<R, W>(input: R, mut output: W)
 where
     R: tokio::io::AsyncRead + Unpin,
@@ -147,7 +132,6 @@ async fn run(
     object.insert("command".to_string(), Value::String(method.to_string()));
     let command: Command = serde_json::from_value(Value::Object(object))
         .map_err(|e| (-32602, format!("Paramètres invalides pour « {method} » : {e}")))?;
-    // Comme l'interface : jamais de script arbitraire de la cible exécuté en root depuis un pilote distant.
     if let Command::Install(request) = &command {
         if request.script_path.is_some() {
             return Err((

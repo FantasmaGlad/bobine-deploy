@@ -1,6 +1,5 @@
 use super::*;
 
-/// Envoie des requêtes, rend toutes les lignes émises par le serveur.
 async fn exchange(requests: &str) -> Vec<Value> {
     let (client, server) = tokio::io::duplex(1 << 20);
     let reader = tokio::spawn(async move {

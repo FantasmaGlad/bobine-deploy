@@ -1,8 +1,5 @@
 name: winget
 
-# Après la CI verte d'un tag vX.Y.Z, ou à la demande pour une release existante : manifestes winget des installeurs .exe,
-# écrits depuis SHA256SUMS (signature vérifiée avec la clé épinglée) et joints à la release. La PR vers
-# microsoft/winget-pkgs reste une action du mainteneur.
 on:
   workflow_run:
     workflows: [CI]
