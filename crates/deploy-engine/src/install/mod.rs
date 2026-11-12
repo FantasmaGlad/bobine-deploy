@@ -2,7 +2,7 @@
 //! `bobine-release.toml`), le lance avec l'élévation choisie et traduit sa sortie `--progress=json` en événements.
 //! `install.sh` reste la seule source de vérité de l'installation.
 
-mod elevation;
+pub(crate) mod elevation;
 mod progress;
 mod replay;
 mod stream;

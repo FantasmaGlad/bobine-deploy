@@ -16,7 +16,7 @@ pub struct Options {
 }
 
 pub async fn request(options: Options) -> Result<Command, Error> {
-    if !options.yes {
+    if !options.yes && !options.simulate {
         return Err(Error::usage(
             "L'installation modifie la cible : relancez avec --yes pour confirmer.",
         ));
