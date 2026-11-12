@@ -3,6 +3,13 @@
 //! Contrat, comme la commande `bobine` : résultat lisible ou `--json` sur stdout, messages sur stderr, codes de sortie
 //! 0 succès, 1 échec, 2 usage, 3 cible injoignable, 4 clé d'hôte ou authentification refusée.
 
+/// `println!` qui ne panique pas quand la sortie est fermée (`bobine-deploy scan | head`).
+macro_rules! out {
+    ($($arg:tt)*) => {{
+        let _ = writeln!(std::io::stdout().lock(), $($arg)*);
+    }};
+}
+
 mod args;
 mod commands;
 mod input;
@@ -17,13 +24,6 @@ use serde_json::json;
 
 use args::Cli;
 use output::Console;
-
-/// `println!` qui ne panique pas quand la sortie est fermée (`bobine-deploy scan | head`).
-macro_rules! out {
-    ($($arg:tt)*) => {{
-        let _ = writeln!(std::io::stdout().lock(), $($arg)*);
-    }};
-}
 
 pub const EXIT_OK: i32 = 0;
 pub const EXIT_ERROR: i32 = 1;

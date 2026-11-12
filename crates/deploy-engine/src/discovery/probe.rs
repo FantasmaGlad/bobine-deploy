@@ -137,9 +137,20 @@ async fn is_bobine(mut stream: TcpStream) -> bool {
     {
         return false;
     }
-    let mut buf = vec![0u8; 1024];
-    match timeout(Duration::from_millis(900), stream.read(&mut buf)).await {
-        Ok(Ok(n)) if n > 0 => String::from_utf8_lossy(&buf[..n]).contains("\"components\""),
-        _ => false,
-    }
+    // En-têtes et corps peuvent arriver en plusieurs segments : lire jusqu'au marqueur, à la fin ou à 4 Kio.
+    let read = async {
+        let mut response = Vec::with_capacity(1024);
+        let mut chunk = [0u8; 1024];
+        while response.len() < 4096 {
+            match stream.read(&mut chunk).await {
+                Ok(0) | Err(_) => break,
+                Ok(n) => response.extend_from_slice(&chunk[..n]),
+            }
+            if String::from_utf8_lossy(&response).contains("\"components\"") {
+                return true;
+            }
+        }
+        false
+    };
+    timeout(Duration::from_millis(900), read).await.unwrap_or(false)
 }

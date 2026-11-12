@@ -8,13 +8,6 @@ use serde_json::json;
 
 use crate::text::printable;
 
-/// `println!` qui ne panique pas quand la sortie est fermée (`bobine-deploy scan | head`).
-macro_rules! out {
-    ($($arg:tt)*) => {{
-        let _ = writeln!(std::io::stdout().lock(), $($arg)*);
-    }};
-}
-
 /// Événements sur la console : JSON lignes sur stdout avec `--json`, sinon journal et progression lisibles sur stderr.
 pub struct Console {
     pub json: bool,

@@ -52,7 +52,6 @@ fn simulated_installation_runs_without_a_target() {
         "--user",
         "admin",
         "--simulate",
-        "--yes",
     ]));
     assert_eq!(code, EXIT_OK);
 }

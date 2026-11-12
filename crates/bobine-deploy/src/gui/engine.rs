@@ -3,6 +3,7 @@
 use bobine_deploy_engine::{execute, Sink};
 use bobine_deploy_proto::{Command, Event};
 use iced::futures::channel::mpsc;
+use iced::futures::SinkExt;
 use iced::Task;
 
 use super::message::{Job, Message};
@@ -22,7 +23,8 @@ pub fn run(job: Job, command: Command) -> Task<Message> {
     Task::run(
         iced::stream::channel(EVENT_BUFFER, async move |mut output: mpsc::Sender<Message>| {
             let result = execute(command, &Forward(output.clone())).await;
-            let _ = output.try_send(Message::Finished(job, result));
+            // Attendu, jamais abandonné : sans ce message l'interface resterait sur « en cours ».
+            let _ = output.send(Message::Finished(job, result)).await;
         }),
         |message| message,
     )

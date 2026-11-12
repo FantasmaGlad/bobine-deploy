@@ -1,6 +1,6 @@
 //! Audit de la cible : système, architecture, politique d'élévation et matériel.
 
-use bobine_deploy_core::privilege::{decide, PrivilegeDecision, SudoProbe};
+use bobine_deploy_core::privilege::{decide, PrivilegeDecision};
 use bobine_deploy_proto::{Credentials, Elevation, Error, Inspection};
 
 use crate::ssh::{self, Session};
@@ -30,13 +30,9 @@ async fn audit(session: &Session, host: &str) -> Result<Inspection, Error> {
     let arch = text(session, "uname -m").await?;
     let is_amd64 = arch.contains("x86_64") || arch.contains("amd64");
 
-    let sudo_installed = text(session, "command -v sudo >/dev/null 2>&1 && echo yes || echo no").await? == "yes";
-    let user_is_sudoer =
-        sudo_installed && text(session, "sudo -n true >/dev/null 2>&1 && echo yes || echo no").await? == "yes";
-    let decision = decide(&SudoProbe {
-        sudo_installed,
-        user_is_sudoer,
-    });
+    let sudo = crate::install::elevation::sudo_probe(session).await?;
+    let (sudo_installed, user_is_sudoer) = (sudo.sudo_installed, sudo.user_is_sudoer);
+    let decision = decide(&sudo);
 
     let cpu_model = text(
         session,
