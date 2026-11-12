@@ -33,17 +33,6 @@
 
 Empreintes : [SHA256SUMS](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.1.0/SHA256SUMS), signées avec la clé de publication de Bobine ([SHA256SUMS.asc](https://github.com/FantasmaGlad/bobine-deploy/releases/download/v0.1.0/SHA256SUMS.asc)).
 
-## Utilisation
-
-```bash
-bobine-deploy                              # fenêtre
-bobine-deploy scan                         # trouver les mini PC
-bobine-deploy install --host bobine.local --yes
-bobine-deploy rpc                          # JSON-RPC sur stdio
-```
-
-Chaque action de la fenêtre existe en ligne de commande (`--help`, `--json`). Alias court sous Linux et macOS : `bdp`.
-
 ---
 
 Licence : [AGPL-3.0](LICENSE) · Sécurité : [docs/fr/SECURITY.md](docs/fr/SECURITY.md) · Contribuer : [docs/fr/CONTRIBUTING.md](docs/fr/CONTRIBUTING.md)
