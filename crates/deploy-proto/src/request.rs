@@ -2,12 +2,14 @@ use serde::{Deserialize, Serialize};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ScanRequest {
     #[serde(default)]
     pub subnet: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct HostKeyRequest {
     pub host: String,
     #[serde(default = "default_ssh_port")]
@@ -15,6 +17,7 @@ pub struct HostKeyRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TrustHostKeyRequest {
     pub host: String,
     #[serde(default = "default_ssh_port")]
@@ -23,6 +26,7 @@ pub struct TrustHostKeyRequest {
 }
 
 #[derive(Clone, Serialize, Deserialize, Zeroize, ZeroizeOnDrop)]
+#[serde(deny_unknown_fields)]
 pub struct Credentials {
     pub host: String,
     #[serde(default = "default_ssh_port")]
@@ -78,6 +82,7 @@ pub enum Elevation {
 }
 
 #[derive(Clone, Serialize, Deserialize, Zeroize, ZeroizeOnDrop)]
+#[serde(deny_unknown_fields)]
 pub struct InstallRequest {
     #[zeroize(skip)]
     pub credentials: Credentials,
