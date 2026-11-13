@@ -1,6 +1,8 @@
 use bobine_deploy_proto::{
     Command, Error, HostKeyInfo, HostKeyRequest, HostKeyStatus, Inspection, Output, TrustHostKeyRequest,
 };
+use zeroize::Zeroize;
+
 use iced::widget::{button, checkbox, column, row, text, text_input};
 use iced::{Element, Length, Task};
 
@@ -41,15 +43,15 @@ fn inspect(app: &mut App) -> Task<Message> {
 pub fn on_finished(app: &mut App, job: Job, result: Result<Output, Error>) -> Task<Message> {
     app.target.busy = false;
     match result {
-        Ok(Output::HostKey(info)) => {
+        Ok(Output::HostKey(info)) if info.host == app.form.host.trim() => {
             let known = info.status == HostKeyStatus::Known;
             app.target.host_key = Some(info);
             if known {
                 return inspect(app);
             }
         }
-        Ok(Output::Inspect(report)) => {
-            app.options.root_password.clear();
+        Ok(Output::Inspect(report)) if report.host == app.form.host.trim() => {
+            app.options.root_password.zeroize();
             app.target.inspection = Some(report);
         }
         Ok(_) => {}

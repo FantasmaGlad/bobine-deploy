@@ -62,3 +62,13 @@ async fn a_remote_driver_cannot_run_an_arbitrary_target_script() {
     .await;
     assert_eq!(replies[0]["error"]["code"], -32602);
 }
+
+#[tokio::test]
+async fn misspelled_parameter_is_refused_instead_of_ignored() {
+    let replies = exchange(concat!(
+        r#"{"jsonrpc":"2.0","id":1,"method":"install","params":{"credentials":{"host":"192.0.2.1","username":"u"},"simulatee":true}}"#,
+        "\n",
+    ))
+    .await;
+    assert_eq!(replies[0]["error"]["code"], -32602);
+}

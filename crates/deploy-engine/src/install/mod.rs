@@ -72,7 +72,8 @@ async fn run(session: &Session, request: &InstallRequest, sink: &dyn Sink) -> Re
     };
     sink.event(Event::InstallLog(format!("> Exécution distante : {command}")));
 
-    let outcome = stream::stream(session, &command, root_password.as_deref(), sink).await;
+    let prompt_secret = root_password.as_deref().filter(|_| needs_root_password);
+    let outcome = stream::stream(session, &command, prompt_secret, sink).await;
 
     if uploaded {
         let _ = session.exec(&format!("rm -f {}", shell_quote(&script))).await;

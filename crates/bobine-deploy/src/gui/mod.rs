@@ -11,7 +11,7 @@ use iced::{window, Element, Length, Size, Task, Theme};
 
 use message::{Job, Message, Screen};
 use screens::{connect, install, scan};
-use state::App;
+use state::{App, TargetState};
 
 #[cfg(test)]
 pub const COMMANDS: &[&str] = &["scan", "host-key", "trust-host-key", "inspect", "install", "version"];
@@ -73,9 +73,18 @@ fn update(app: &mut App, message: Message) -> Task<Message> {
         Message::SubnetChanged(subnet) => app.scan.subnet = subnet,
         Message::StartScan => return scan::start(app),
         Message::SelectDevice(ip) => scan::select(app, ip),
-        Message::HostChanged(host) => app.form.host = host,
-        Message::PortChanged(port) => app.form.port = port.chars().filter(char::is_ascii_digit).take(5).collect(),
-        Message::UserChanged(user) => app.form.user = user,
+        Message::HostChanged(host) => {
+            app.form.host = host;
+            app.target = TargetState::default();
+        }
+        Message::PortChanged(port) => {
+            app.form.port = port.chars().filter(char::is_ascii_digit).take(5).collect();
+            app.target = TargetState::default();
+        }
+        Message::UserChanged(user) => {
+            app.form.user = user;
+            app.target = TargetState::default();
+        }
         Message::PasswordChanged(password) => app.form.password = password,
         Message::PickKey => return pick_key(),
         Message::KeyPicked(path) => {
@@ -168,4 +177,27 @@ fn header(app: &App) -> Element<'_, Message> {
     .style(container::bordered_box)
     .width(Length::Fill)
     .into()
+}
+
+#[cfg(test)]
+mod tests {
+    use bobine_deploy_proto::{HostKeyInfo, HostKeyStatus};
+
+    use super::*;
+
+    #[test]
+    fn editing_the_target_forgets_what_was_learned_about_the_previous_one() {
+        let mut app = App::default();
+        app.form.host = "ancienne.local".into();
+        app.target.host_key = Some(HostKeyInfo {
+            host: "ancienne.local".into(),
+            port: 22,
+            fingerprint: "SHA256:x".into(),
+            key_type: "ssh-ed25519".into(),
+            status: HostKeyStatus::Known,
+            known_hosts: String::new(),
+        });
+        let _ = update(&mut app, Message::HostChanged("nouvelle.local".into()));
+        assert!(app.target.host_key.is_none() && app.target.inspection.is_none());
+    }
 }
