@@ -48,8 +48,11 @@ jobs:
           git add bobine-release.toml vendor/install.sh
           git commit -m "chore(install): embarquer install.sh de bobine $TAG"
           git push --force origin "$BRANCH"
-          if ! gh pr view "$BRANCH" > /dev/null 2>&1; then
-            gh pr create --head "$BRANCH" --base main --title "chore(install): embarquer install.sh de bobine $TAG" \
-              --body "install.sh de la release $TAG de Bobine, signature de SHA256SUMS et empreinte vérifiées par scripts/sync-install-sh.py."
+          title="chore(install): embarquer install.sh de bobine $TAG"
+          body="install.sh de la release $TAG de Bobine, signature de SHA256SUMS et empreinte vérifiées par scripts/sync-install-sh.py."
+          if gh pr view "$BRANCH" > /dev/null 2>&1; then
+            gh pr edit "$BRANCH" --title "$title" --body "$body"
+          else
+            gh pr create --head "$BRANCH" --base main --title "$title" --body "$body"
           fi
           gh workflow run ci.yml --ref "$BRANCH"
