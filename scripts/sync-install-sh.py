@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Récupère install.sh d'une release de Bobine, le vérifie et l'embarque dans vendor/install.sh.
 
-Usage : sync-install-sh.py [--tag V5.1.1] [--check]
+Usage : sync-install-sh.py [--tag Vx.y.z] [--check]
 
 - sans --check : télécharge install.sh, SHA256SUMS et SHA256SUMS.asc de la release, vérifie la signature avec la clé de
   keys/bobine-release-signing.asc (dans un trousseau temporaire), vérifie l'empreinte, puis écrit vendor/install.sh et
@@ -78,8 +78,7 @@ def main() -> int:
         return 0
     VENDORED.parent.mkdir(exist_ok=True)
     VENDORED.write_bytes(script)
-    PIN.write_text(PIN.read_text(encoding="utf-8").splitlines()[0] + f'\ntag = "{tag}"\ninstall_sh_sha256 = "{digest}"\n',
-                   encoding="utf-8")
+    PIN.write_text(f'tag = "{tag}"\ninstall_sh_sha256 = "{digest}"\n', encoding="utf-8")
     print(f"vendor/install.sh mis à jour depuis {tag} ({digest}).")
     return 0
 
