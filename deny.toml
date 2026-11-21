@@ -5,9 +5,10 @@ all-features = false
 version = 2
 yanked = "deny"
 ignore = [
-    { id = "RUSTSEC-2023-0071", reason = "RSA signing only with a user-supplied key, towards the chosen target" },
-    { id = "RUSTSEC-2026-0192", reason = "GUI font stack, no untrusted font is ever loaded" },
-    { id = "RUSTSEC-2024-0436", reason = "compile-time macro of the Metal backend, nothing runs in the binary" },
+    { id = "RUSTSEC-2023-0071", reason = "2026-11-08: RSA signing only with a user-supplied key, towards the chosen target" },
+    { id = "RUSTSEC-2026-0192", reason = "2026-11-08: GUI font stack, no untrusted font is ever loaded" },
+    { id = "RUSTSEC-2024-0436", reason = "2026-11-08: compile-time macro of the Metal backend, nothing runs in the binary" },
+    { id = "RUSTSEC-2026-0543", reason = "2026-11-21: chrono is a wasm32-only dependency of russh-util, never compiled for the shipped targets" },
 ]
 
 [licenses]
