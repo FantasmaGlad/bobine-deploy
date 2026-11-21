@@ -88,6 +88,7 @@ async fn run(cli: Cli) -> Result<(), Error> {
 
 pub fn attach_console() {
     #[cfg(windows)]
+    // SAFETY: AttachConsole takes no pointer and only reports failure when no parent console exists.
     unsafe {
         windows_sys::Win32::System::Console::AttachConsole(windows_sys::Win32::System::Console::ATTACH_PARENT_PROCESS);
     }
