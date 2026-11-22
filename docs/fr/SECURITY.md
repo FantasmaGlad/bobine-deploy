@@ -2,7 +2,7 @@
 
 Bobine Deploy suit la politique de sécurité du projet Bobine : mêmes canaux privés, même clé de signalement, mêmes
 délais. Politique complète : [FantasmaGlad/Bobine, docs/fr/SECURITY.md](https://github.com/FantasmaGlad/Bobine/blob/main/docs/fr/SECURITY.md).
-Version anglaise : [SECURITY.md](../../SECURITY.md). Politique lisible par machine : <https://bobine.fit/.well-known/security.txt>.
+Version anglaise : [SECURITY.md](../SECURITY.md). Politique lisible par machine : <https://bobine.fit/.well-known/security.txt>.
 
 ## Versions prises en charge
 

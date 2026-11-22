@@ -1,8 +1,8 @@
 # Security Policy
 
 Bobine Deploy follows the security policy of the Bobine project: same private channels, same report key, same
-response targets. Full policy: [FantasmaGlad/Bobine, SECURITY.md](https://github.com/FantasmaGlad/Bobine/blob/main/SECURITY.md).
-French version: [docs/fr/SECURITY.md](docs/fr/SECURITY.md). Machine-readable policy: <https://bobine.fit/.well-known/security.txt>.
+response targets. Full policy: [FantasmaGlad/Bobine, SECURITY.md](https://github.com/FantasmaGlad/Bobine/blob/main/docs/SECURITY.md).
+French version: [docs/fr/SECURITY.md](fr/SECURITY.md). Machine-readable policy: <https://bobine.fit/.well-known/security.txt>.
 
 ## Supported versions
 

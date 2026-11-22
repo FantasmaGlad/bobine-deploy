@@ -1,6 +1,6 @@
 # Contributing
 
-French version: [docs/fr/CONTRIBUTING.md](docs/fr/CONTRIBUTING.md).
+French version: [docs/fr/CONTRIBUTING.md](fr/CONTRIBUTING.md).
 
 ## Before you start
 
