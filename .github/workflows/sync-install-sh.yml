@@ -1,8 +1,6 @@
 name: Synchronisation d'install.sh
 
 on:
-  schedule:
-    - cron: "43 6 * * *"
   workflow_dispatch:
 
 permissions:
